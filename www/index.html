@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<html lang="en-AU">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>Racing NSW — Official App</title>
+
+<!-- ============================================================
+     RACING NSW — OFFICIAL APP
+     ------------------------------------------------------------
+     Single-file reference build. No bundler; Tailwind via CDN +
+     vanilla JS. Renders inside a CSS iPhone frame on desktop and
+     goes full-bleed on phones < 480px wide.
+
+     Design language: iOS "Liquid Glass" — translucent layered
+     glass, blur + saturation, specular highlights, continuous
+     corners, floating pill tab bar. Brand palette: deep navy,
+     sky blue, white, RNSW red, gold.
+
+     INFORMATION ARCHITECTURE (5 tabs)
+       Home      — live race-day hub (Live / Today / News)
+       Schedule  — race-day planning & programmes
+       Results   — outcomes, full fields & form
+       Fantasy   — the engagement game (squad, leaderboard)
+       Menu      — Racing NSW network, socials & podcasts
+     Account, alerts, tickets, membership, accessibility and the
+     Dash companion all live behind the top-right account circle.
+
+     SCRIPT LAYOUT (see banner comments in <script>)
+       1 · DATA CONSTANTS   2 · APP STATE      3 · UTILITIES
+       4 · RENDER FUNCTIONS 5 · EVENT HANDLERS 6 · BOOT
+
+     Fantasy scoring: J 50/25/10/5 · T 30/15/8/3 per runner ·
+     ×3 G1, ×2 G2, ×1.5 G3, ×1.2 Listed. Salary cap $2,000,000,
+     squad of 5 jockeys + 2 trainers, one captain at 2× points.
+     ============================================================ -->
+
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&family=Inter:wght@400;500;600;700;800&display=swap" />
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+<script src="js/tailwind.config.js"></script>
+
+<link rel="stylesheet" href="css/app.css">
+</head>
+
+<body>
+<div id="stage">
+<div id="phone">
+  <div id="screen">
+    <div class="d-island" aria-hidden="true"></div>
+
+    <!-- ───────── FIXED CHROME (never scrolls) ─────────
+         Status bar + blur veil live at #screen level so the
+         Dynamic Island zone is always cleanly veiled and content
+         glides beneath it, exactly as iOS renders it. -->
+    <div class="top-veil" aria-hidden="true"></div>
+    <div class="status-bar flex items-center justify-between px-7 text-[13.5px] font-semibold text-white">
+      <span>9:41</span>
+      <span class="flex items-center gap-1.5">
+        <svg width="17" height="11" viewBox="0 0 17 11" fill="white"><rect x="0" y="7" width="3" height="4" rx="1"/><rect x="4.5" y="5" width="3" height="6" rx="1"/><rect x="9" y="2.5" width="3" height="8.5" rx="1"/><rect x="13.5" y="0" width="3" height="11" rx="1"/></svg>
+        <svg width="16" height="11" viewBox="0 0 16 11" fill="white"><path d="M8 9.5a1.4 1.4 0 1 0 0 2.8 1.4 1.4 0 0 0 0-2.8Z" transform="translate(0,-1.6)"/><path d="M8 6.2c1.5 0 2.9.6 3.9 1.6l-1.3 1.3A3.7 3.7 0 0 0 8 8a3.7 3.7 0 0 0-2.6 1.1L4.1 7.8A5.5 5.5 0 0 1 8 6.2Z"/><path d="M8 3c2.4 0 4.6.95 6.2 2.5l-1.3 1.3A6.8 6.8 0 0 0 8 4.8a6.8 6.8 0 0 0-4.9 2L1.8 5.5A8.7 8.7 0 0 1 8 3Z"/></svg>
+        <svg width="25" height="12" viewBox="0 0 25 12" fill="none"><rect x=".5" y=".5" width="21" height="11" rx="3" stroke="white" opacity=".5"/><rect x="2" y="2" width="15" height="8" rx="1.6" fill="white"/><path d="M23 4v4c1-.3 1.6-1 1.6-2S24 4.3 23 4Z" fill="white" opacity=".5"/></svg>
+      </span>
+    </div>
+
+    <div id="appScroll" class="font-body">
+      <div class="aurora"></div>
+
+      <!-- Spacer: keeps in-flow content clear of the island/status zone -->
+      <div style="height:56px" aria-hidden="true"></div>
+
+      <!-- ───────── Glass header: brand + account circle + race strip ─────────
+           Sticks at 56px so it can never slide under the Dynamic Island. -->
+      <header id="appHeader" class="sticky top-[56px] z-50 px-3 pt-1 pb-2">
+        <div class="glass glass-strong rounded-[28px] px-4 py-3">
+          <div class="flex items-center justify-between">
+            <button class="tap grid place-items-center w-11 h-11 rounded-full glass glass-pill text-sky-brand" aria-label="Interactive course map" onclick="openCourseMap()">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1"><path d="M9 4 3 6.5v13L9 17l6 2.5 6-2.5v-13L15 6.5 9 4Z"/><path d="M9 4v13M15 6.5v13"/></svg>
+            </button>
+            <div class="text-center leading-none select-none">
+              <div class="display text-[18px]">RACING <span class="text-sky-brand">NSW</span></div>
+              <div class="text-[8.5px] font-bold tracking-[.34em] text-sky-soft mt-0.5">OFFICIAL APP</div>
+            </div>
+            <!-- ACCOUNT moved here from the bottom nav: full click-through sheet -->
+            <button class="tap w-11 h-11 rounded-full grid place-items-center display text-[14px] text-[#06122B]"
+                    style="background:linear-gradient(180deg,#8FCBFF,#5BB8FF); box-shadow:inset 0 1px 0 rgba(255,255,255,.6),0 4px 12px rgba(91,184,255,.4)"
+                    aria-label="Account & settings" onclick="openSheet()" id="headerAvatar">JW</button>
+          </div>
+          <!-- Next race-day strip — "R4" removed; badge is plain "G1" -->
+          <button class="tap w-full mt-3 rounded-2xl bg-white/95 text-navy-950 px-4 py-2.5 flex items-center justify-between text-left"
+                  onclick="switchTab('schedule')">
+            <div>
+              <div class="text-[10.5px] font-extrabold tracking-[.18em] text-navy-700">19 SEP · ROYAL RANDWICK</div>
+              <div class="display-tight text-[16px] leading-tight">7 Stakes Day <span class="text-sky-brand">›</span></div>
+            </div>
+            <div class="flex items-center gap-2 shrink-0">
+              <div class="text-right leading-none">
+                <div class="text-[15px]">☀️ <span class="font-extrabold text-navy-950">22°</span></div>
+                <div class="mt-1"><span class="cond cond-good">Good 4</span></div>
+              </div>
+              <span class="display-tight text-[12px] bg-gold text-navy-950 px-3 py-1.5 rounded-lg">G1</span>
+            </div>
+          </button>
+        </div>
+      </header>
+
+      <!-- ════════════ HOME ════════════ -->
+      <main id="view-home" class="view active relative z-10 px-4 pt-3 pb-36">
+
+        <!-- Universal Horse Search -->
+        <div class="relative mb-4">
+          <input id="horseSearch" type="search" autocomplete="off"
+            placeholder="Search any horse, trainer or jockey…"
+            oninput="runSearch(this.value)"
+            class="w-full tap glass rounded-2xl pl-12 pr-4 py-3.5 text-[15px] text-white placeholder:text-sky-soft/60 outline-none focus:border-sky-brand/70 bg-transparent" />
+          <svg class="absolute left-4 top-1/2 -translate-y-1/2 text-sky-brand" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+          <div id="searchResults" class="hidden absolute z-30 mt-2 w-full glass glass-strong rounded-2xl overflow-hidden"></div>
+        </div>
+
+        <!-- Race Day hub â primary purpose of Home -->
+        <div class="flex items-center gap-2.5 mb-3">
+          <span class="pulse"></span>
+          <h2 class="display text-[19px]">Race Day</h2>
+        </div>
+        <div class="seg glass glass-pill grid-cols-3 mb-4" role="tablist" aria-label="Race-day view">
+          <button id="rd-live" onclick="setRaceDayMode('live')">Live</button>
+          <button id="rd-today" onclick="setRaceDayMode('today')">Today</button>
+          <button id="rd-news" class="on" onclick="setRaceDayMode('news')">News</button>
+        </div>
+
+        <!-- LIVE â live vision + race-by-race feed -->
+        <div id="liveMode" class="hidden mb-4">
+          <article class="glass rounded-[26px] overflow-hidden mb-3">
+            <div class="relative aspect-video overflow-hidden" style="background:#2a0a3a">
+              <img src="assets/hero-featured.jpg" alt="Sky Thoroughbred Central" class="absolute inset-0 w-full h-full object-cover" />
+              <span class="absolute top-3 left-3 flex items-center gap-1.5 bg-rnswred text-white display-tight text-[10px] px-2.5 py-1 rounded-md"><span class="pulse" style="width:7px;height:7px"></span> LIVE</span>
+              <button class="absolute inset-0 grid place-items-center group" aria-label="Watch Sky Thoroughbred Central live"
+                      onclick="toast('Opening Sky Thoroughbred Central…')">
+                <span class="w-16 h-16 rounded-full glass glass-strong glass-pill grid place-items-center group-active:scale-95 transition">
+                  <svg width="26" height="26" viewBox="0 0 24 24" fill="white"><path d="M8 5v14l11-7z"/></svg>
+                </span>
+              </button>
+            </div>
+            <div class="px-4 py-3">
+              <div class="display-tight text-[14px]">Sky Thoroughbred Central</div>
+              <div class="text-[12px] text-sky-soft font-semibold">Live now · Royal Randwick, Race 6</div>
+            </div>
+          </article>
+          <div id="liveFeed" class="space-y-3"></div>
+        </div>
+
+        <!-- TODAY â today's programme -->
+        <div id="todayFeed" class="hidden space-y-3 mb-4"></div>
+
+        <!-- NEWS (default) â one featured story, raceday tools, then latest -->
+        <div id="newsFeed">
+          <!-- Featured story (links to a real Racing NSW / Everest video) -->
+          <div class="rounded-[26px] overflow-hidden mb-5 relative min-h-[280px] border border-white/10 bg-black block">
+            <video id="featVid" class="absolute inset-0 w-full h-full object-cover" autoplay muted loop playsinline preload="auto" poster="assets/video-poster.jpg">
+              <source src="assets/featured-video.mp4" type="video/mp4">
+            </video>
+            <span class="absolute inset-0" style="background:linear-gradient(180deg,rgba(4,12,31,.12),rgba(4,12,31,.10),rgba(4,12,31,.82))"></span>
+            <span class="absolute top-4 left-4 bg-rnswred text-white display-tight text-[10.5px] px-2.5 py-1 rounded-md z-10">FEATURED</span>
+            <button onclick="toggleFeatSound(this)" aria-label="Toggle sound" class="tap absolute top-4 right-4 z-10 w-9 h-9 rounded-full glass glass-strong glass-pill grid place-items-center text-white text-[15px]">&#128263;</button>
+            <div class="absolute inset-x-0 bottom-0 p-5 z-10 pointer-events-none">
+              <h3 class="display text-[23px] leading-[1.05]">The Spring<br>Carnival is here</h3>
+              <p class="text-sky-soft text-[13.5px] font-medium mt-1.5">19 Sep &ndash; 21 Nov &middot; Royal Randwick &amp; Rosehill Gardens</p>
+            </div>
+          </div>
+
+
+
+          <!-- News sub-tabs: Latest stories | Shows (YouTube) -->
+          <div class="seg glass glass-pill grid-cols-2 mb-4" role="tablist" aria-label="News view">
+            <button id="nt-latest" class="on" onclick="newsTab('latest')">Latest</button>
+            <button id="nt-shows" onclick="newsTab('shows')">Shows</button>
+          </div>
+
+          <!-- LATEST — current stories from racingnsw.com.au -->
+          <div id="newsStories">
+            <div class="flex items-center justify-between mb-3">
+              <h2 class="display text-[17px]">From Racing NSW</h2>
+              <a href="https://www.racingnsw.com.au/media-news-premierships/latest-news/" target="_blank" rel="noopener" class="text-sky-brand text-[13px] font-bold tap px-2">View all</a>
+            </div>
+            <div id="storyList" class="space-y-2.5"></div>
+          </div>
+
+          <!-- SHOWS — Racing NSW / Sky Thoroughbred Central on YouTube -->
+          <div id="newsShows" class="hidden">
+            <div class="flex items-center justify-between mb-3">
+              <h2 class="display text-[17px]">Shows</h2>
+              <span class="text-[10px] font-extrabold tracking-[.18em] text-sky-soft">YOUTUBE</span>
+            </div>
+            <div id="showsGrid" class="grid grid-cols-2 gap-3"></div>
+          </div>
+        </div><!-- /#newsFeed -->
+      </main>
+
+      <!-- ════════════ SCHEDULE ════════════ -->
+      <main id="view-schedule" class="view relative z-10 px-4 pt-3 pb-36">
+        <h2 class="display text-[19px] mb-0.5">Schedule</h2>
+        <p class="text-sky-soft text-[12.5px] mb-3">2026 Spring Carnival — upcoming meetings &amp; full race programmes.</p>
+        <!-- SECTOR FILTER -->
+        <div class="seg glass glass-pill grid-cols-4 mb-4" role="tablist" aria-label="Sector filter">
+          <button id="sec-sched-all" class="on" onclick="setSchedSector('all')">All</button>
+          <button id="sec-sched-metro" onclick="setSchedSector('metro')">Metro</button>
+          <button id="sec-sched-prov" onclick="setSchedSector('prov')">Prov.</button>
+          <button id="sec-sched-country" onclick="setSchedSector('country')">Country</button>
+        </div>
+        <div id="scheduleList" class="space-y-3"></div>
+      </main>
+
+      <!-- ════════════ RESULTS ════════════ -->
+      <main id="view-results" class="view relative z-10 px-4 pt-3 pb-36">
+        <h2 class="display text-[19px] mb-0.5">Results</h2>
+        <p class="text-sky-soft text-[12.5px] mb-3">Outcomes, full fields &amp; form.</p>
+        <!-- SECTOR FILTER -->
+        <div class="seg glass glass-pill grid-cols-4 mb-3" role="tablist" aria-label="Sector filter">
+          <button id="sec-res-all" class="on" onclick="setResSector('all')">All</button>
+          <button id="sec-res-metro" onclick="setResSector('metro')">Metro</button>
+          <button id="sec-res-prov" onclick="setResSector('prov')">Prov.</button>
+          <button id="sec-res-country" onclick="setResSector('country')">Country</button>
+        </div>
+        <div class="carousel mb-4">
+          <button class="tap glass glass-pill px-5 py-2.5 text-[12.5px] font-extrabold text-navy-950" style="background:linear-gradient(180deg,#8FCBFF,#5BB8FF)" onclick="sortResults('date')">Newest</button>
+          <button class="tap glass glass-pill px-5 py-2.5 text-[12.5px] font-bold text-sky-soft" onclick="sortResults('cls')">By class</button>
+          <button class="tap glass glass-pill px-5 py-2.5 text-[12.5px] font-bold text-sky-soft" onclick="sortResults('venue')">By track</button>
+        </div>
+        <div id="resultsList" class="space-y-3"></div>
+      </main>
+
+      <!-- ════════════ FANTASY (all fantasy lives here) ════════════ -->
+      <main id="view-fantasy" class="view relative z-10 pb-36">
+
+        <!-- Sticky budget tracker -->
+        <div id="budgetSticky" class="sticky z-40 px-3 pb-2">
+          <div class="glass glass-strong rounded-[24px] px-4 pt-3 pb-3">
+            <div class="flex items-end justify-between mb-1.5">
+              <div>
+                <div class="text-[9.5px] font-extrabold tracking-[.2em] text-sky-soft">SALARY CAP REMAINING</div>
+                <div class="display text-[24px] leading-none" id="budgetRemaining">$2,000,000</div>
+              </div>
+              <div class="text-right">
+                <div class="text-[9.5px] font-extrabold tracking-[.2em] text-sky-soft">PICKS</div>
+                <div class="display text-[19px]" id="pickCount">0<span class="text-sky-soft">/7</span></div>
+              </div>
+            </div>
+            <div class="h-3 rounded-full bg-white/10 overflow-hidden" role="progressbar" aria-label="Budget used">
+              <div id="budgetFill" class="h-full rounded-full bg-emerald-400" style="width:0%"></div>
+            </div>
+            <div id="capAlert" class="hidden mt-2.5 bg-rnswred/20 border border-rnswred/80 text-white text-[12.5px] font-bold rounded-2xl px-3.5 py-2.5 leading-snug"></div>
+          </div>
+        </div>
+
+        <div class="px-4 pt-2">
+          <!-- 3.1 My Team | Leaderboard segmented control -->
+          <div class="seg glass glass-pill grid-cols-2 mb-4" role="tablist" aria-label="Fantasy view">
+            <button id="fan-team" class="on" onclick="setFantasyView('team')">My Team</button>
+            <button id="fan-board" onclick="setFantasyView('board')">Leaderboard</button>
+          </div>
+
+          <div id="fantasyTeam">
+          <!-- Round context + trade economy (fantasy-only info) -->
+          <div class="glass rounded-[24px] p-4 mb-4">
+            <div class="flex items-center justify-between">
+              <div>
+                <div class="text-[9.5px] font-extrabold tracking-[.2em] text-sky-soft">2026 SPRING CARNIVAL · 11 RACE DAYS</div>
+                <div class="display-tight text-[16px]">Prices set by live results</div>
+              </div>
+              <span class="display-tight text-[10.5px] bg-gold text-navy-950 px-2 py-1 rounded-md">DATA REFRESH</span>
+            </div>
+            <div class="mt-3 rounded-2xl bg-black/30 px-4 py-2.5 flex items-center justify-between">
+              <span class="text-[11.5px] font-bold text-sky-soft">NEXT TEAM LOCK</span>
+              <span class="display text-[15px]">02<span class="text-sky-soft text-xs">D</span> : 11<span class="text-sky-soft text-xs">H</span> : 40<span class="text-sky-soft text-xs">M</span></span>
+            </div>
+            <div class="mt-3 flex items-center justify-between text-[12px] font-semibold text-sky-soft">
+              <span>Free trades: <b class="text-white">3 of 3</b> (Autumn)</span>
+              <span>Extra trade: <b class="text-rnswred">−30 pts</b></span>
+            </div>
+            <div class="mt-1 text-[11px] text-sky-soft/80">Emergency trades free if your jockey is suspended/injured pre-raceday · 1 free full reset between carnivals.</div>
+          </div>
+
+          <!-- Squad grid -->
+          <div class="flex items-center justify-between mb-3">
+            <h2 class="display text-[17px]">Your Stable</h2>
+            <button class="text-sky-brand text-[13px] font-bold tap px-2" onclick="resetTeam()">Reset</button>
+          </div>
+          <div class="text-[10.5px] font-extrabold tracking-[.2em] text-sky-soft mb-2">JOCKEYS · 5</div>
+          <div id="jockeyGrid" class="grid grid-cols-3 gap-2.5 mb-4"></div>
+          <div class="text-[10.5px] font-extrabold tracking-[.2em] text-sky-soft mb-2">TRAINERS · 2</div>
+          <div id="trainerGrid" class="grid grid-cols-2 gap-2.5 mb-2"></div>
+          <p class="text-[11.5px] text-sky-soft/80 mb-5">Tap <b class="text-gold">C</b> on a selected jockey to make them Captain — <b class="text-white">2× points</b> for the round.</p>
+
+          <!-- Roster picker -->
+          <h2 class="display text-[17px] mb-3">Player Market</h2>
+          <div class="seg glass glass-pill grid-cols-2 mb-3" role="tablist">
+            <button id="seg-jockeys" class="on" onclick="setMarket('jockey')">Jockeys</button>
+            <button id="seg-trainers" onclick="setMarket('trainer')">Trainers</button>
+          </div>
+          <div id="rosterList" class="space-y-2.5 pb-5"></div>
+
+          <!-- 3.3 Past Rounds accordion -->
+          <h2 class="display text-[17px] mb-3">Past Rounds</h2>
+          <div id="pastRounds" class="space-y-2.5 mb-5"></div>
+
+          <!-- Scoring reference (fantasy-only) -->
+          <div class="glass rounded-[24px] p-4 mb-4">
+            <div class="display-tight text-[13px] mb-2 text-sky-brand">Scoring · base pts × race multiplier</div>
+            <div class="grid grid-cols-2 gap-x-4 gap-y-1 text-[12.5px] font-semibold">
+              <div class="text-sky-soft">Jockey: Win / 2nd / 3rd / 4th</div><div class="text-right">50 / 25 / 10 / 5</div>
+              <div class="text-sky-soft">Trainer (per runner)</div><div class="text-right">30 / 15 / 8 / 3</div>
+              <div class="text-sky-soft">G1 · G2 · G3 · Listed</div><div class="text-right">3× · 2× · 1.5× · 1.2×</div>
+              <div class="text-sky-soft">Captain jockey</div><div class="text-right text-gold">2× round points</div>
+            </div>
+          </div>
+          </div><!-- /#fantasyTeam -->
+
+          <!-- 3.1 Leaderboard view -->
+          <div id="fantasyBoard" class="hidden">
+            <div class="glass glass-strong rounded-[24px] p-4 mb-4" style="border-color:rgba(91,184,255,.6)">
+              <div class="text-[9.5px] font-extrabold tracking-[.2em] text-sky-soft">MY GLOBAL RANK</div>
+              <div class="flex items-end justify-between mt-1">
+                <div class="display text-[30px] leading-none">#47</div>
+                <div class="text-right"><div class="display text-[20px] leading-none text-gold">1,284</div><div class="text-[10px] text-sky-soft font-bold">POINTS</div></div>
+              </div>
+              <div class="text-[11.5px] text-sky-soft mt-1">of 12,834 players · top 1%</div>
+            </div>
+            <div class="seg glass glass-pill grid-cols-2 mb-3" role="tablist">
+              <button id="lb-global" class="on" onclick="setBoardTab('global')">Global</button>
+              <button id="lb-league" onclick="setBoardTab('league')">My League</button>
+            </div>
+            <div id="boardList" class="space-y-2"></div>
+            <button id="inviteBtn" class="tap w-full mt-4 rounded-2xl py-3.5 display-tight text-[13.5px] text-navy-950 hidden" style="background:linear-gradient(180deg,#8FCBFF,#5BB8FF)" onclick="toast('🔗 Invite link copied — share with your mates!')">Invite Friends</button>
+          </div>
+        </div>
+      </main>
+
+      <!-- ════════════ MENU (replaces Account in nav) ════════════ -->
+      <main id="view-activations" class="view relative z-10 px-4 pt-3 pb-36">
+        <h2 class="display text-[19px] mb-0.5">Experience</h2>
+        <p class="text-sky-soft text-[12.5px] mb-4">On-course experiences at the track.</p>
+        <div id="activationList" class="space-y-3"></div>
+        <p class="text-[11px] text-sky-soft/70 leading-relaxed mt-5">Experiences run on feature race days. Locations &amp; times are confirmed on the day in‑app.</p>
+      </main>
+
+    </div>
+
+    <!-- ───────── PINNED CHROME: tab bar, sheet, toast ─────────
+         Children of #screen (not the scroller) so they hold
+         position exactly while content scrolls beneath. -->
+    <nav id="tabbar" class="glass glass-strong glass-pill" aria-label="Primary">
+        <button class="nav-btn active tap" data-tab="home" onclick="switchTab('home')">
+          <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="m3 11 9-8 9 8"/><path d="M5 10v10h5v-6h4v6h5V10"/></svg>HOME</button>
+        <button class="nav-btn tap" data-tab="schedule" onclick="switchTab('schedule')">
+          <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>SCHEDULE</button>
+        <button class="nav-btn tap" data-tab="results" onclick="switchTab('results')">
+          <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 3v18M5 4h13l-2.5 4L18 12H5"/></svg>RESULTS</button>
+        <button class="nav-btn tap" data-tab="fantasy" onclick="switchTab('fantasy')">
+          <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0V4Z"/><path d="M7 6H4a3 3 0 0 0 3 5M17 6h3a3 3 0 0 1-3 5"/></svg>FANTASY</button>
+        <button class="nav-btn tap" data-tab="activations" onclick="switchTab('activations')">
+          <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 3.5l1.7 4.8 4.8 1.7-4.8 1.7L12 16.5l-1.7-4.8L5.5 10l4.8-1.7z"/></svg>EXPERIENCE</button>
+      </nav>
+
+    <!-- ───────── ACCOUNT SHEET (opened from top-right circle) ───────── -->
+    <div id="sheetWrap" role="dialog" aria-modal="true" aria-label="Account">
+        <div id="sheetScrim" onclick="closeSheet()"></div>
+        <div id="sheet" class="glass glass-strong">
+          <div class="w-10 h-1.5 rounded-full bg-white/30 mx-auto mb-4"></div>
+          <div class="flex items-center gap-4 mb-4">
+            <div id="sheetAvatar" class="w-14 h-14 rounded-full grid place-items-center display text-[18px] text-[#06122B] shrink-0" style="background:linear-gradient(180deg,#8FCBFF,#5BB8FF)">JW</div>
+            <div class="min-w-0">
+              <input id="userNameInput" type="text" placeholder="Enter your name"
+                onblur="saveUserName()" onkeydown="if(event.key==='Enter'){this.blur();}"
+                class="display-tight text-[16px] text-white bg-transparent outline-none border-b border-transparent focus:border-sky-brand/60 w-full"
+                value="Jack Webster" />
+              <div class="text-sky-soft text-[12.5px] font-semibold">Member since 2021 · Sydney</div>
+            </div>
+            <button class="tap ml-auto w-10 h-10 rounded-full glass glass-pill grid place-items-center text-sky-soft" onclick="closeSheet()" aria-label="Close">✕</button>
+          </div>
+          <div class="space-y-2.5 text-white">
+            <button class="tap w-full glass rounded-2xl px-4 py-4 flex items-center justify-between" onclick="openTickets()"><span class="font-bold text-[14.5px]">🎟️ My Tickets &amp; Passes</span><span class="text-sky-brand text-lg">›</span></button>
+            <button class="tap w-full glass rounded-2xl px-4 py-4 flex items-center justify-between" onclick="openTravel()"><span class="font-bold text-[14.5px]">🚆 Getting Here &amp; Travel</span><span class="text-sky-brand text-lg">›</span></button>
+            <button class="tap w-full glass rounded-2xl px-4 py-4 flex items-center justify-between" onclick="openAlerts()"><span class="font-bold text-[14.5px]">🔔 Race Alerts</span><span class="text-sky-brand text-lg">›</span></button>
+            <!-- Dash companion: tap label to chat, switch toggles the bubble -->
+            <div class="w-full glass rounded-2xl px-4 py-4 flex items-center justify-between gap-3">
+              <button class="tap flex-1 text-left font-bold text-[14.5px]" onclick="closeSheet(); openChat()">🐎 Ask Dash</button>
+              <button id="dashToggle" role="switch" aria-checked="true" onclick="toggleDash()"
+                class="relative w-[52px] h-[31px] rounded-full transition-colors duration-300 shrink-0"
+                style="background:linear-gradient(180deg,#8FCBFF,#5BB8FF)">
+                <span id="dashKnob" class="absolute top-[3px] left-[24px] w-[25px] h-[25px] rounded-full bg-white shadow transition-all duration-300"></span>
+              </button>
+            </div>
+            <button class="tap w-full glass rounded-2xl px-4 py-4 flex items-center justify-between" onclick="openAccessibility()"><span class="font-bold text-[14.5px]">Aa Text Size &amp; Accessibility</span><span class="text-sky-brand text-lg">›</span></button>
+            <button class="tap w-full glass rounded-2xl px-4 py-4 flex items-center justify-between" onclick="openMembership()"><span class="font-bold text-[14.5px]">💳 Membership &amp; Payments</span><span class="text-sky-brand text-lg">›</span></button>
+            <button class="tap w-full glass rounded-2xl px-4 py-4 flex items-center justify-between" onclick="toast('🛟 Help centre & Responsible Wagering — GambleAware 1800 858 858')"><span class="font-bold text-[14.5px]">🛟 Help &amp; Responsible Wagering</span><span class="text-sky-brand text-lg">›</span></button>
+            <button class="tap w-full glass rounded-2xl px-4 py-4 flex items-center justify-between text-rnswred" onclick="toast('You’ve been signed out')"><span class="font-bold text-[14.5px]">Sign out</span></button>
+          </div>
+
+          <!-- Racing NSW network (moved here from the old Menu tab) -->
+          <div class="mt-6">
+            <div class="text-[10.5px] font-extrabold tracking-[.2em] text-sky-soft mb-2">RACING NSW NETWORK</div>
+            <div class="space-y-2.5 mb-5" id="siteLinks"></div>
+            <div class="text-[10.5px] font-extrabold tracking-[.2em] text-sky-soft mb-2">FOLLOW US</div>
+            <div class="grid grid-cols-5 gap-2 mb-5" id="socialLinks"></div>
+            <div class="text-[10.5px] font-extrabold tracking-[.2em] text-sky-soft mb-2">PODCASTS</div>
+            <div class="space-y-2.5 mb-3" id="podLinks"></div>
+            <p class="text-[11px] text-sky-soft/70 leading-relaxed">Racing NSW acknowledges the Traditional Owners of the lands on which we race. Gamble responsibly — GambleAware 1800 858 858.</p>
+          </div>
+        </div>
+      </div>
+
+    <!-- ───────── DASH · floating AI companion bubble ─────────
+         Pinned to #screen so it hovers in the corner at all times
+         (hidden via Menu → Settings → Dash toggle). -->
+    <button id="dashBubble" aria-label="Open Dash, your AI companion" onclick="openChat()">
+      <span class="dash-ping" id="dashPing">1</span>
+      <span class="dash-tag" id="dashTag">Hi, I'm Dash 👋</span>
+      <div style="width:100%;height:100%;border-radius:50%;display:grid;place-items:center;font-size:30px;line-height:1" aria-hidden="true">🐎</div>
+    </button>
+
+    <!-- ───────── DASH · chat sheet (rises from bottom) ───────── -->
+    <div id="chatWrap" role="dialog" aria-modal="true" aria-label="Dash AI companion">
+      <div id="chatScrim" onclick="closeChat()"></div>
+      <div id="chatSheet" class="glass glass-strong">
+        <!-- Chat header -->
+        <div class="px-4 pt-3 pb-3 flex items-center gap-3 border-b border-white/10">
+          <div class="w-11 h-11 rounded-full overflow-hidden border-2 border-white/70 shrink-0" style="background:linear-gradient(180deg,#8FCBFF,#5BB8FF)">
+            <div class="w-full h-full grid place-items-center" style="font-size:24px" aria-hidden="true">🐎</div>
+          </div>
+          <div class="flex-1 min-w-0">
+            <div class="display-tight text-[16px] text-white flex items-center gap-2">Dash <span class="text-[9px] font-extrabold tracking-wider text-navy-950 bg-sky-brand px-1.5 py-0.5 rounded">AI</span></div>
+            <div class="text-[11.5px] text-sky-soft font-semibold flex items-center gap-1.5"><span class="pulse" style="width:6px;height:6px"></span> Your Racing NSW companion</div>
+          </div>
+          <button class="tap w-10 h-10 rounded-full glass glass-pill grid place-items-center text-sky-soft shrink-0" onclick="closeChat()" aria-label="Close chat">✕</button>
+        </div>
+        <!-- Message log -->
+        <div id="chatLog" class="space-y-3"></div>
+        <!-- Suggested question chips -->
+        <div id="chatChips" class="carousel px-4 pt-2 pb-1" aria-label="Suggested questions"></div>
+        <!-- Composer -->
+        <div class="px-3 pt-2 pb-4 border-t border-white/10 flex items-center gap-2">
+          <input id="chatInput" type="text" autocomplete="off" placeholder="Ask Dash about racing or the app…"
+            onkeydown="if(event.key==='Enter') sendChat()"
+            class="flex-1 tap glass rounded-full px-4 py-3 text-[14px] text-white placeholder:text-sky-soft/60 outline-none bg-transparent" />
+          <button class="tap w-12 h-12 rounded-full grid place-items-center text-navy-950 shrink-0" style="background:linear-gradient(180deg,#8FCBFF,#5BB8FF); box-shadow:inset 0 1px 0 rgba(255,255,255,.6),0 4px 12px rgba(91,184,255,.4)" onclick="sendChat()" aria-label="Send">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M3 11l18-8-8 18-2-7-8-3z"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════ V4 SHEETS (pinned chrome, slide up via sheetUp) ═══════ -->
+
+    <!-- Profile card sheet (search → entity, 1.2) -->
+    <div id="profileSheetWrap" class="sheetWrap" role="dialog" aria-modal="true" aria-label="Profile">
+      <div class="sheetScrim" onclick="closeGenericSheet('profileSheetWrap')"></div>
+      <div class="sheetPanel glass glass-strong">
+        <div class="sheetGrab"></div>
+        <div class="px-4 pb-2 flex items-center gap-3">
+          <span id="profileIcon" class="text-2xl">🐎</span>
+          <div class="flex-1 min-w-0"><div id="profileTitle" class="display-tight text-[18px] truncate">—</div></div>
+          <button id="followBtn" data-name="" aria-pressed="false" class="tap glass glass-pill px-4 py-2.5 text-[12.5px] font-extrabold text-sky-brand" onclick="toggleFollow(this)">+ Follow</button>
+          <button class="tap w-10 h-10 rounded-full glass glass-pill grid place-items-center text-sky-soft shrink-0" onclick="closeGenericSheet('profileSheetWrap')" aria-label="Close">✕</button>
+        </div>
+        <div id="profileBody" class="sheetBody"></div>
+      </div>
+    </div>
+
+    <!-- Race programme sheet (schedule drill-in, 1.4) -->
+    <div id="progSheetWrap" class="sheetWrap" role="dialog" aria-modal="true" aria-label="Race programme">
+      <div class="sheetScrim" onclick="closeGenericSheet('progSheetWrap')"></div>
+      <div class="sheetPanel glass glass-strong">
+        <div class="sheetGrab"></div>
+        <div class="px-4 pb-2 flex items-start gap-3">
+          <div class="flex-1 min-w-0"><div id="progTitle" class="display-tight text-[17px] leading-tight">Race Programme</div><div id="progSub" class="text-[11.5px] text-sky-soft mt-1 flex items-center gap-1.5"></div></div>
+          <button class="tap w-10 h-10 rounded-full glass glass-pill grid place-items-center text-sky-soft shrink-0" onclick="closeGenericSheet('progSheetWrap')" aria-label="Close">✕</button>
+        </div>
+        <div id="progBody" class="sheetBody"></div>
+      </div>
+    </div>
+
+    <!-- Tickets & passes sheet (1.1) -->
+    <div id="ticketsSheetWrap" class="sheetWrap" role="dialog" aria-modal="true" aria-label="Tickets">
+      <div class="sheetScrim" onclick="closeGenericSheet('ticketsSheetWrap')"></div>
+      <div class="sheetPanel glass glass-strong">
+        <div class="sheetGrab"></div>
+        <div class="px-4 pb-2 flex items-center gap-3">
+          <div class="flex-1"><div class="display-tight text-[18px]">🎟️ My Tickets &amp; Passes</div></div>
+          <button class="tap w-10 h-10 rounded-full glass glass-pill grid place-items-center text-sky-soft" onclick="closeGenericSheet('ticketsSheetWrap')" aria-label="Close">✕</button>
+        </div>
+        <div id="ticketsBody" class="sheetBody"></div>
+      </div>
+    </div>
+
+    <!-- Getting Here & Travel sheet (V9 · Ascot-inspired) -->
+    <div id="travelSheetWrap" class="sheetWrap" role="dialog" aria-modal="true" aria-label="Getting here and travel">
+      <div class="sheetScrim" onclick="closeGenericSheet('travelSheetWrap')"></div>
+      <div class="sheetPanel glass glass-strong">
+        <div class="sheetGrab"></div>
+        <div class="px-4 pb-2 flex items-center gap-3">
+          <div class="flex-1"><div class="display-tight text-[18px] text-white">🚆 Getting Here</div></div>
+          <button class="tap w-10 h-10 rounded-full glass glass-pill grid place-items-center text-sky-soft" onclick="closeGenericSheet('travelSheetWrap')" aria-label="Close">✕</button>
+        </div>
+        <div class="sheetBody text-white">
+          <p class="text-[12.5px] text-sky-soft mb-3">Plan your trip to <b class="text-white">Royal Randwick</b>. Live travel updates on race day.</p>
+          <div class="rounded-2xl px-4 py-3 mb-3 flex items-start gap-3" style="background:rgba(91,184,255,.12);border:1px solid rgba(91,184,255,.35)">
+            <span class="text-[11px] font-extrabold px-2 py-0.5 rounded-full text-navy-950" style="background:#5BB8FF">LIVE</span>
+            <div class="text-[12.5px] leading-snug">L2 light rail running to schedule. Allow extra time leaving after the last race.</div>
+          </div>
+
+          <div class="glass rounded-2xl p-4 mb-2.5">
+            <div class="font-extrabold text-[14px] mb-0.5">🚊 Light rail · easiest</div>
+            <div class="text-[12.5px] text-sky-soft leading-snug">L2 Randwick line to <b class="text-white">Royal Randwick</b> or <b class="text-white">Wansey Rd</b> stop — a short walk to the gates. Runs from Circular Quay via Central.</div>
+          </div>
+          <div class="glass rounded-2xl p-4 mb-2.5">
+            <div class="font-extrabold text-[14px] mb-0.5">🚆 Train + connect</div>
+            <div class="text-[12.5px] text-sky-soft leading-snug">Take any T-line to <b class="text-white">Central</b>, then the L2 light rail or a bus to the course.</div>
+          </div>
+          <div class="glass rounded-2xl p-4 mb-2.5">
+            <div class="font-extrabold text-[14px] mb-0.5">🚌 Bus</div>
+            <div class="text-[12.5px] text-sky-soft leading-snug">Routes along Alison Rd &amp; Anzac Parade (339, 372, 374, 376, 377) stop close to the entrances.</div>
+          </div>
+          <div class="glass rounded-2xl p-4 mb-2.5">
+            <div class="font-extrabold text-[14px] mb-0.5">🅿️ Driving &amp; parking</div>
+            <div class="text-[12.5px] text-sky-soft leading-snug">Limited on-course parking via the Alison Rd gates. Metered street parking in Kensington &amp; Randwick fills early — allow extra time.</div>
+          </div>
+          <div class="glass rounded-2xl p-4 mb-2.5">
+            <div class="font-extrabold text-[14px] mb-0.5">🚕 Rideshare drop-off</div>
+            <div class="text-[12.5px] text-sky-soft leading-snug">Set your destination to <b class="text-white">Royal Randwick, Alison Rd</b>. Pick-ups are easiest from Wansey Rd after the last.</div>
+          </div>
+          <div class="glass rounded-2xl p-4 mb-3">
+            <div class="font-extrabold text-[14px] mb-0.5">♿ Accessible access</div>
+            <div class="text-[12.5px] text-sky-soft leading-snug">Step-free entry at Gate 1 (Member Lawn). Accessible parking available on request via the venue team.</div>
+          </div>
+
+          <div class="rounded-2xl px-4 py-3" style="background:rgba(242,179,61,.12);border:1px solid rgba(242,179,61,.4)">
+            <div class="font-extrabold text-[13.5px] text-gold mb-0.5">⏱️ Beat the queues</div>
+            <div class="text-[12.5px] leading-snug">Add your ticket to Apple Wallet before you arrive and enter via your allocated gate. Gates open <b>2 hours</b> before the first race.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Race alerts sheet (1.1) -->
+    <div id="alertsSheetWrap" class="sheetWrap" role="dialog" aria-modal="true" aria-label="Race alerts">
+      <div class="sheetScrim" onclick="closeGenericSheet('alertsSheetWrap')"></div>
+      <div class="sheetPanel glass glass-strong">
+        <div class="sheetGrab"></div>
+        <div class="px-4 pb-2 flex items-center gap-3">
+          <div class="flex-1"><div class="display-tight text-[18px]">🔔 Race Alerts</div></div>
+          <button class="tap w-10 h-10 rounded-full glass glass-pill grid place-items-center text-sky-soft" onclick="closeGenericSheet('alertsSheetWrap')" aria-label="Close">✕</button>
+        </div>
+        <div class="px-4">
+          <div class="seg glass glass-pill grid-cols-3 mb-3" role="tablist">
+            <button id="al-horses" class="on" onclick="setAlertTab('horses')">Horses</button>
+            <button id="al-jockeys" onclick="setAlertTab('jockeys')">Jockeys</button>
+            <button id="al-tracks" onclick="setAlertTab('tracks')">Tracks</button>
+          </div>
+        </div>
+        <div id="alertsBody" class="sheetBody pt-0"></div>
+        <div class="px-4 pb-4 pt-1">
+          <button class="tap w-full btn-primary py-3.5 display-tight text-[13.5px]" onclick="toast('🔔 Alerts saved')">Save Preferences</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Accessibility sheet (1.1) -->
+    <div id="a11ySheetWrap" class="sheetWrap" role="dialog" aria-modal="true" aria-label="Accessibility">
+      <div class="sheetScrim" onclick="closeGenericSheet('a11ySheetWrap')"></div>
+      <div class="sheetPanel glass glass-strong">
+        <div class="sheetGrab"></div>
+        <div class="px-4 pb-2 flex items-center gap-3">
+          <div class="flex-1"><div class="display-tight text-[18px]">Aa Text Size &amp; Accessibility</div></div>
+          <button class="tap w-10 h-10 rounded-full glass glass-pill grid place-items-center text-sky-soft" onclick="closeGenericSheet('a11ySheetWrap')" aria-label="Close">✕</button>
+        </div>
+        <div class="sheetBody">
+          <div class="glass rounded-2xl p-4 mb-3">
+            <div class="font-bold text-[14px] mb-1">Text Size</div>
+            <div class="text-[12px] text-sky-soft mb-3">Drag to resize text across the app.</div>
+            <input type="range" min="0" max="3" step="1" value="1" id="fontSlider" oninput="setFontSize(this.value)" class="w-full" style="accent-color:#5BB8FF" />
+            <div class="flex justify-between text-[10px] font-bold text-sky-soft mt-1"><span>Small</span><span>Default</span><span>Large</span><span>X-Large</span></div>
+          </div>
+          <div class="glass rounded-2xl px-4 py-4 mb-3 flex items-center justify-between">
+            <span class="font-bold text-[14px]">Reduce Motion</span>
+            <button id="rmToggle" role="switch" aria-checked="false" onclick="toggleReduceMotion(this)" class="relative w-[52px] h-[31px] rounded-full transition-colors duration-300" style="background:rgba(255,255,255,.18)">
+              <span class="absolute top-[3px] left-[3px] w-[25px] h-[25px] rounded-full bg-white shadow transition-all duration-300"></span>
+            </button>
+          </div>
+          <div class="glass rounded-2xl px-4 py-4 flex items-center justify-between">
+            <span class="font-bold text-[14px]">High Contrast</span>
+            <button id="hcToggle" role="switch" aria-checked="false" onclick="toggleHighContrast(this)" class="relative w-[52px] h-[31px] rounded-full transition-colors duration-300" style="background:rgba(255,255,255,.18)">
+              <span class="absolute top-[3px] left-[3px] w-[25px] h-[25px] rounded-full bg-white shadow transition-all duration-300"></span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Membership & payments sheet (1.1) -->
+    <div id="memSheetWrap" class="sheetWrap" role="dialog" aria-modal="true" aria-label="Membership">
+      <div class="sheetScrim" onclick="closeGenericSheet('memSheetWrap')"></div>
+      <div class="sheetPanel glass glass-strong">
+        <div class="sheetGrab"></div>
+        <div class="px-4 pb-2 flex items-center gap-3">
+          <div class="flex-1"><div class="display-tight text-[18px]">💳 Membership &amp; Payments</div></div>
+          <button class="tap w-10 h-10 rounded-full glass glass-pill grid place-items-center text-sky-soft" onclick="closeGenericSheet('memSheetWrap')" aria-label="Close">✕</button>
+        </div>
+        <div class="sheetBody">
+          <div class="rounded-2xl p-5 mb-3 text-center" style="background:linear-gradient(135deg,#F2B33D,#CD7F32)">
+            <div class="display text-[13px] text-navy-950 tracking-wider">GOLD MEMBER</div>
+            <div class="display text-[26px] text-navy-950 mt-1" id="memName">Jack Webster</div>
+            <div class="text-[12px] text-navy-950/80 font-bold mt-1">Member #RN-204815 · Expires 31 Dec 2026</div>
+          </div>
+          <div class="glass rounded-2xl px-4 py-4 mb-3 flex items-center gap-3">
+            <span class="text-2xl">💳</span>
+            <div class="flex-1"><div class="font-bold text-[14px]">Visa •••• 4242</div><div class="text-[11.5px] text-sky-soft">Default payment method</div></div>
+            <span class="text-emerald-400 text-[11px] font-bold">ACTIVE</span>
+          </div>
+          <button class="tap w-full glass rounded-2xl px-4 py-4 mb-2.5 flex items-center justify-between" onclick="toast('Opening membership details…')"><span class="font-bold text-[14px]">Manage Membership</span><span class="text-sky-brand text-lg">›</span></button>
+          <button class="tap w-full glass rounded-2xl px-4 py-4 flex items-center justify-between" onclick="toast('Opening payment settings…')"><span class="font-bold text-[14px]">Update Payment</span><span class="text-sky-brand text-lg">›</span></button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Interactive Course Map (opens from the top-left header button) -->
+    <div id="mapOverlay" aria-label="Royal Randwick course map">
+      <div id="mapBar">
+        <button class="tap" onclick="closeCourseMap()" aria-label="Back to Racing NSW"
+          style="display:flex;align-items:center;gap:3px;color:#fff;font-weight:800;font-size:13px;background:none;border:0;padding:6px 2px;flex:none">
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="m15 18-6-6 6-6"/></svg>Back
+        </button>
+        <div style="flex:1;text-align:center">
+          <div class="display-tight" style="font-size:13.5px;color:#fff">Royal Randwick</div>
+          <div style="font-size:8.5px;letter-spacing:.18em;color:#A7CDEF;font-weight:800">COURSE MAP · DEV STAND-IN</div>
+        </div>
+        <div style="width:44px;flex:none"></div>
+      </div>
+      <div id="mapFilters"></div>
+      <div id="mapViewport">
+        <div id="mapCanvas">
+          <img id="mapImg" src="assets/course-map.jpg" alt="Royal Randwick course map" draggable="false">
+          <div id="mapPins"></div>
+        </div>
+        <div id="mapZoom">
+          <button class="tap" onclick="mapZoom(1)" aria-label="Zoom in">+</button>
+          <button class="tap" onclick="mapZoom(-1)" aria-label="Zoom out">−</button>
+          <button class="tap" onclick="mapReset()" aria-label="Recenter" style="font-size:16px">⌖</button>
+        </div>
+        <div id="mapPinLabel"></div>
+      </div>
+    </div>
+
+    <!-- The Golden Mingle — embedded experience (fully self-contained iframe) -->
+    <div id="gmOverlay" aria-label="The Golden Mingle">
+      <div id="gmBar">
+        <button class="tap" onclick="closeGoldenMingle()" aria-label="Back to Racing NSW"
+          style="display:flex;align-items:center;gap:3px;color:#FFF1B5;font-weight:800;font-size:12.5px;background:none;border:0;padding:6px 2px;flex:none">
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="m15 18-6-6 6-6"/></svg>Back
+        </button>
+        <div id="gmPhaseToggle" role="tablist" aria-label="Event phase">
+          <button class="gmph" data-ph="teaser" onclick="gmPhase('teaser')">Teaser</button>
+          <button class="gmph on" data-ph="live" onclick="gmPhase('live')">Live</button>
+          <button class="gmph" data-ph="after" onclick="gmPhase('after')">After</button>
+        </div>
+        <div style="width:44px;flex:none"></div>
+      </div>
+      <iframe id="gmFrame" title="The Golden Mingle" src="golden-mingle.html"></iframe>
+    </div>
+
+    <!-- Activation detail sheet -->
+    <div id="actSheetWrap" class="sheetWrap" role="dialog" aria-modal="true" aria-label="Activation">
+      <div class="sheetScrim" onclick="closeGenericSheet('actSheetWrap')"></div>
+      <div class="sheetPanel glass glass-strong">
+        <div class="sheetGrab"></div>
+        <div class="px-4 pb-2 flex items-center gap-3">
+          <span id="actIcon" class="text-3xl">✨</span>
+          <div class="flex-1 min-w-0"><div id="actTitle" class="display-tight text-[18px] leading-tight text-white">—</div><div id="actWhere" class="text-[12px] text-sky-soft mt-0.5"></div></div>
+          <button class="tap w-10 h-10 rounded-full glass glass-pill grid place-items-center text-sky-soft shrink-0" onclick="closeGenericSheet('actSheetWrap')" aria-label="Close">✕</button>
+        </div>
+        <div class="sheetBody">
+          <p id="actBlurb" class="text-[14px] leading-relaxed text-white/90 mb-4"></p>
+          <div class="glass rounded-2xl px-4 py-3 flex items-center gap-3 mb-3">
+            <span class="text-xl">🕑</span>
+            <div><div class="text-[9.5px] font-extrabold tracking-wider text-sky-soft">WHEN</div><div id="actWhen" class="font-bold text-[13.5px] text-white"></div></div>
+          </div>
+          <button class="tap btn-primary w-full py-3.5 display-tight text-[13.5px]" onclick="toast('Added to your race-day plan')">Add to My Day</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Toast -->
+    <div id="toast" class="absolute left-1/2 -translate-x-1/2 bottom-28 z-[90] bg-white text-navy-950 font-bold text-[13px] rounded-2xl px-4 py-3 shadow-xl opacity-0 pointer-events-none transition-opacity duration-500 max-w-[86%] text-center"></div>
+
+    <!-- ───────── 3.5 ONBOARDING OVERLAY (first run only) ───────── -->
+    <div id="onboard" class="gone" aria-label="Welcome to Racing NSW">
+      <div class="aurora"></div>
+      <div id="obTrack" class="relative z-10">
+        <!-- Screen 1 -->
+        <div class="ob-screen">
+          <div class="display text-[34px] leading-none mb-1">RACING <span class="text-sky-brand">NSW</span></div>
+          <div class="text-[9px] font-bold tracking-[.34em] text-sky-soft mb-8">OFFICIAL APP</div>
+          <h2 class="display text-[26px] leading-tight mb-3">Your racing,<br>your way</h2>
+          <p class="text-sky-soft text-[14px] leading-relaxed max-w-[260px]">Live racing, results, fantasy and more — all in one place.</p>
+          <button class="tap w-full max-w-[280px] mt-10 btn-primary py-3.5 display-tight text-[14px]" onclick="obNext(1)">Next</button>
+        </div>
+        <!-- Screen 2 -->
+        <div class="ob-screen">
+          <div class="text-[64px] mb-4">🏆</div>
+          <h2 class="display text-[26px] leading-tight mb-3">Play Fantasy<br>Racing</h2>
+          <p class="text-sky-soft text-[14px] leading-relaxed max-w-[270px]">Build a stable of <b class="text-white">7 picks</b> — 5 jockeys + 2 trainers — under a <b class="text-white">$2M cap</b>. Nominate a Captain for 2× points and climb the leaderboard.</p>
+          <button class="tap w-full max-w-[280px] mt-10 btn-primary py-3.5 display-tight text-[14px]" onclick="obNext(2)">Next</button>
+        </div>
+        <!-- Screen 3 -->
+        <div class="ob-screen">
+          <div class="text-[64px] mb-4">🔔</div>
+          <h2 class="display text-[26px] leading-tight mb-3">Never miss<br>a moment</h2>
+          <p class="text-sky-soft text-[14px] leading-relaxed max-w-[270px]">Get race alerts for your favourite horses, jockeys and tracks — and live results as they happen.</p>
+          <button class="tap w-full max-w-[280px] mt-10 btn-primary py-3.5 display-tight text-[14px]" onclick="finishOnboarding(true)">Allow Notifications</button>
+          <button class="tap mt-3 text-sky-soft text-[13px] font-bold" onclick="finishOnboarding(false)">Maybe later</button>
+        </div>
+      </div>
+      <!-- Dot indicators -->
+      <div class="absolute bottom-10 left-1/2 -translate-x-1/2 z-10 flex items-center gap-2">
+        <span class="ob-dot on" id="ob-dot-0"></span>
+        <span class="ob-dot" id="ob-dot-1"></span>
+        <span class="ob-dot" id="ob-dot-2"></span>
+      </div>
+    </div>
+
+    <div class="home-bar" aria-hidden="true"></div>
+  </div>
+</div>
+</div>
+
+<script src="js/app.js"></script>
+</body>
+</html>

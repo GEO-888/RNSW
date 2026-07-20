@@ -1,0 +1,15 @@
+{
+  "appId": "au.com.racingnsw.app",
+  "appName": "Racing NSW",
+  "webDir": "www",
+  "server": { "androidScheme": "https" },
+  "ios": { "contentInset": "never" },
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 1200,
+      "backgroundColor": "#040C1F",
+      "showSpinner": false
+    },
+    "StatusBar": { "style": "DARK", "backgroundColor": "#040C1F" }
+  }
+}

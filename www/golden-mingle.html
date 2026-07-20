@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>The Golden Mingle</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,400;1,500;1,600&family=Bebas+Neue&family=DM+Sans:ital,opsz,wght@0,9..40,400..800;1,9..40,500..700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --gm:#B8122A; --gm2:#8E0E21; --gm3:#5C0A18; --hi:#FFF1B5; --hi2:rgba(255,241,181,.86); --hi3:rgba(255,241,181,.6);
+  --paper:#FAF4DE; --paper2:#F3EBCB; --ink:#2A1518; --ink60:rgba(42,21,24,.6); --ink40:rgba(42,21,24,.4); --ink12:rgba(42,21,24,.12);
+  --green:#3E6B4E; --gold:#E0A11B; --goldbg:#F0B429; --card:#FFFFFF;
+  --serif:'Cormorant Garamond',serif; --caps:'Bebas Neue',sans-serif; --sans:'DM Sans',sans-serif;
+  --ease:cubic-bezier(.22,.9,.3,1);
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{background:#1a0d10;font-family:var(--sans);color:var(--ink);-webkit-font-smoothing:antialiased;
+  display:flex;align-items:center;justify-content:center;min-height:100vh;
+  background-image:radial-gradient(rgba(184,18,42,.18) 1px,transparent 1px);background-size:24px 24px}
+.stage{display:flex;flex-direction:column;align-items:center;gap:12px;padding:22px 12px}
+.stage-cap{font-family:var(--caps);letter-spacing:.26em;font-size:12px;color:var(--hi3);text-align:center}
+.stage-cap b{color:var(--hi);font-weight:400}
+.phone{width:393px;max-width:100vw;height:830px;max-height:94vh;background:#0f0709;border-radius:54px;padding:11px;
+  box-shadow:0 36px 90px -24px rgba(0,0,0,.7), inset 0 0 0 2px rgba(255,241,181,.16);position:relative}
+.app{position:relative;width:100%;height:100%;border-radius:44px;overflow:hidden;background:var(--paper);display:flex;flex-direction:column}
+.notch{position:absolute;top:20px;left:50%;transform:translateX(-50%);width:112px;height:26px;background:#0f0709;border-radius:99px;z-index:80;pointer-events:none}
+@media(max-width:460px),(max-height:760px){
+  body{display:block;background:var(--paper)}
+  .stage{padding:0;gap:0}.stage-cap{display:none}
+  .phone{width:100%;max-width:none;height:100vh;height:100dvh;max-height:none;border-radius:0;padding:0;box-shadow:none}
+  .app{border-radius:0}.notch{display:none}
+}
+/* ---------- app top bar ---------- */
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:46px 20px 12px;flex:none;
+  background:var(--gm);color:var(--hi);position:relative;z-index:10}
+.topbar .brand{font-family:var(--caps);letter-spacing:.16em;font-size:15px;line-height:1;display:flex;align-items:center;gap:7px}
+.topbar .sub{font-family:var(--caps);letter-spacing:.3em;font-size:8.5px;color:var(--hi2);margin-top:2px}
+.iconbtn{width:38px;height:38px;border-radius:50%;background:rgba(255,241,181,.14);border:none;color:var(--hi);
+  display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px}
+/* ---------- page ---------- */
+.page{flex:1;min-height:0;overflow-y:auto;scrollbar-width:none;padding:0 16px 26px;background:var(--paper)}
+.page::-webkit-scrollbar{display:none}
+.sect{display:flex;align-items:center;justify-content:space-between;padding:18px 4px 0}
+.sect .l{font-family:var(--caps);letter-spacing:.22em;font-size:11px;color:var(--ink40)}
+.sect .r{font-family:var(--caps);letter-spacing:.16em;font-size:11px;color:var(--ink40)}
+.sect .l.gm{color:var(--gm)}
+.serif{font-family:var(--serif);font-style:italic;font-weight:600}
+/* ---------- pass card ---------- */
+.pass{background:var(--gm);border-radius:20px;overflow:hidden;color:var(--hi);position:relative;margin-top:12px;
+  box-shadow:0 18px 40px -16px rgba(92,10,24,.7)}
+.pass .stripe{height:9px;background:repeating-linear-gradient(-45deg,var(--gm2) 0 14px,var(--hi) 14px 18px)}
+.pass .body{padding:15px 16px 15px}
+.pass .lab{font-family:var(--caps);letter-spacing:.2em;font-size:10px;color:var(--hi2)}
+.pass .nm{font-family:var(--serif);font-style:italic;font-weight:600;font-size:20px;margin-top:1px}
+.pass .num{font-family:var(--caps);font-size:27px;line-height:1}
+.ribbon{border:none;border-radius:99px;padding:3px 11px;font-family:var(--caps);letter-spacing:.12em;font-size:9.5px;cursor:pointer;vertical-align:middle}
+.shimmer{position:absolute;inset:0;background:linear-gradient(115deg,transparent 32%,rgba(255,255,255,.26) 49%,rgba(255,255,255,.42) 51%,rgba(255,255,255,.26) 53%,transparent 68%);background-size:240% 100%;animation:shine 2.8s ease 1s infinite;pointer-events:none}
+@keyframes shine{0%{background-position:130% 0}55%,100%{background-position:-130% 0}}
+.qrbox{background:#fff;border-radius:11px;padding:6px;display:flex}
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;border:none;cursor:pointer;
+  font-family:var(--caps);letter-spacing:.2em;font-size:13.5px;padding:13px;border-radius:99px;transition:transform .12s}
+.btn:active{transform:translateY(1.5px)}
+.btn:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+.btn.lt{background:var(--hi);color:var(--gm);box-shadow:0 3px 0 rgba(0,0,0,.26)}
+.btn.gm{background:var(--gm);color:var(--hi);box-shadow:0 3px 0 var(--gm2)}
+.btn.o{background:transparent;color:var(--gm);box-shadow:inset 0 0 0 1.5px var(--gm)}
+.btn.olt{background:transparent;color:var(--hi);box-shadow:inset 0 0 0 1.5px var(--hi2)}
+/* ---------- generic card ---------- */
+.c{background:var(--card);border:1px solid var(--ink12);border-radius:16px;padding:13px 14px;margin-top:10px}
+.c .tt{font-weight:800;font-size:14px;color:var(--ink);letter-spacing:-.01em}
+.c .ss{font-size:12px;color:var(--ink60);line-height:1.45}
+/* quick actions */
+.acts{display:flex;gap:9px;margin-top:11px}
+.act{flex:1;background:var(--card);border:1px solid var(--ink12);border-radius:14px;padding:10px 4px;text-align:center;cursor:pointer;transition:transform .12s}
+.act:active{transform:scale(.96)}
+.act i{font-style:normal;font-size:17px;display:block}
+.act span{font-family:var(--caps);letter-spacing:.1em;font-size:9px;color:var(--ink60);display:block;margin-top:3px}
+.act .tk{color:var(--gm)}
+/* identity bits */
+.sad{background:var(--gm);color:var(--hi);font-family:var(--caps);display:flex;align-items:center;justify-content:center;border-radius:9px;flex:none}
+.sad.gn{background:var(--green)} .sad.yl{background:var(--goldbg);color:var(--ink)}
+.mono{border-radius:50%;background:var(--gm);color:var(--hi);font-family:var(--caps);display:flex;align-items:center;justify-content:center;flex:none}
+.bd{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:5px;vertical-align:0}
+.bd.g{background:var(--green)}.bd.r{background:var(--gm)}.bd.y{background:var(--goldbg)}
+.prow{display:flex;align-items:center;gap:10px}
+/* first-run note */
+.fr{display:flex;gap:9px;align-items:flex-start;background:rgba(184,18,42,.06);border:1px solid rgba(184,18,42,.2);border-radius:13px;padding:10px 12px;margin-top:10px}
+.fr p{flex:1;font-size:12px;color:var(--ink60)}
+.fr .x{background:none;border:none;color:var(--gm);font-size:14px;cursor:pointer;padding:2px 4px}
+/* opener bubble */
+.opener{background:var(--paper2);border-radius:11px;padding:8px 11px;margin-top:9px;font-size:12px;color:var(--ink60)}
+.opener .o{font-family:var(--caps);letter-spacing:.16em;font-size:9px;color:var(--gm)}
+/* ---------- sheets ---------- */
+.sheet{position:fixed;bottom:0;left:50%;transform:translate(-50%,105%);width:100%;max-width:393px;z-index:60;
+  background:var(--paper);border-radius:24px 24px 0 0;box-shadow:0 -16px 44px rgba(0,0,0,.4);
+  max-height:90%;display:flex;flex-direction:column;color:var(--ink);transition:transform .38s var(--ease)}
+.sheet.on{transform:translate(-50%,0)}
+.sheet.dark{background:#1C0B10;color:var(--hi)}
+.grab{width:42px;height:4.5px;border-radius:99px;background:var(--ink12);margin:10px auto 4px;flex:none}
+.sheet.dark .grab{background:rgba(255,241,181,.2)}
+.shead{display:flex;align-items:center;justify-content:space-between;padding:4px 20px 10px}
+.shead .t{font-family:var(--serif);font-style:italic;font-weight:600;font-size:18px}
+.x{background:none;border:none;font-family:var(--caps);letter-spacing:.16em;font-size:12px;color:var(--gm);cursor:pointer;padding:8px}
+.sheet.dark .x{color:var(--hi)}
+.sbody{overflow-y:auto;flex:1;min-height:0;padding:0 20px 22px;scrollbar-width:none}
+.sbody::-webkit-scrollbar{display:none}
+/* badge picker */
+.bopt{display:flex;align-items:center;gap:13px;background:#fff;border:1.5px solid var(--ink12);border-radius:14px;padding:13px 14px;margin-top:9px;cursor:pointer;width:100%;text-align:left}
+.bopt .dot{width:19px;height:19px;border-radius:50%;flex:none}
+.bopt b{font-size:14px;color:var(--ink);display:block}
+.bopt span{font-size:12px;color:var(--ink60)}
+.bopt.sel{border-color:var(--gm);background:var(--paper)}
+/* scanner */
+.finder{margin:18px auto 0;width:208px;height:208px;border-radius:26px;position:relative;background:rgba(255,241,181,.05);cursor:pointer}
+.finder .e{position:absolute;width:42px;height:42px;border:0 solid var(--hi)}
+.finder .e1{top:-2px;left:-2px;border-top-width:3px;border-left-width:3px;border-top-left-radius:26px}
+.finder .e2{top:-2px;right:-2px;border-top-width:3px;border-right-width:3px;border-top-right-radius:26px}
+.finder .e3{bottom:-2px;left:-2px;border-bottom-width:3px;border-left-width:3px;border-bottom-left-radius:26px}
+.finder .e4{bottom:-2px;right:-2px;border-bottom-width:3px;border-right-width:3px;border-bottom-right-radius:26px}
+.beam{position:absolute;left:15px;right:15px;top:16px;height:2.5px;border-radius:99px;background:linear-gradient(90deg,transparent,var(--hi) 50%,transparent);animation:beam 2s ease-in-out infinite}
+@keyframes beam{0%,100%{top:16px}50%{top:186px}}
+.finder.busy .beam{animation-duration:.45s}
+/* chat */
+.bub{max-width:78%;padding:10px 14px;border-radius:18px;font-size:14px;line-height:1.45;margin-top:9px}
+.bub.them{background:#fff;border:1px solid var(--ink12);border-bottom-left-radius:6px;align-self:flex-start}
+.bub.me{background:var(--gm);color:var(--hi);border-bottom-right-radius:6px;align-self:flex-end}
+.ice-row{display:flex;gap:8px;overflow-x:auto;padding:8px 16px 2px;scrollbar-width:none;flex:none}
+.ice-row::-webkit-scrollbar{display:none}
+.ice{flex:none;border:1.5px dashed var(--gm);color:var(--gm);background:rgba(184,18,42,.05);border-radius:99px;padding:9px 13px;font-size:12px;cursor:pointer;min-height:38px}
+/* veils */
+.veil{position:fixed;top:0;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:393px;z-index:70;
+  display:flex;align-items:center;justify-content:center;flex-direction:column;text-align:center;padding:0 26px;
+  background:var(--gm);color:var(--hi);opacity:0;pointer-events:none;transition:opacity .4s}
+.veil.on{opacity:1;pointer-events:auto}
+.veil.draw{background:#1C0B10}
+.spark{position:absolute;font-size:18px;color:var(--hi);animation:fall 2.8s linear forwards;pointer-events:none;text-shadow:0 0 14px rgba(255,241,181,.7)}
+@keyframes fall{0%{transform:translateY(-30px) rotate(0);opacity:0}12%{opacity:1}100%{transform:translateY(560px) rotate(220deg);opacity:0}}
+.bloom{font-size:42px;animation:bloom 1.1s var(--ease)}
+@keyframes bloom{0%{transform:scale(.2) rotate(-40deg);opacity:0}60%{transform:scale(1.18) rotate(8deg);opacity:1}100%{transform:scale(1)}}
+.reveal{animation:reveal .9s var(--ease)}
+@keyframes reveal{0%{transform:translateY(40px) scale(.88);opacity:0}100%{transform:none;opacity:1}}
+.tick{display:inline-flex;align-items:center;gap:6px;background:rgba(0,0,0,.22);border:1.5px dashed var(--hi2);border-radius:9px;padding:6px 12px;font-family:var(--caps);letter-spacing:.12em;font-size:10.5px;color:var(--hi)}
+.toast{position:fixed;left:50%;transform:translateX(-50%) translateY(14px);bottom:30px;width:calc(100% - 36px);max-width:357px;
+  background:var(--ink);color:var(--paper);border-radius:14px;padding:12px 15px;z-index:75;opacity:0;transition:.3s var(--ease);pointer-events:none;
+  font-size:13px;box-shadow:0 14px 30px -10px rgba(0,0,0,.5)}
+.toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+.fade{animation:fade .45s var(--ease) both}
+@keyframes fade{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+@media(prefers-reduced-motion:reduce){*{animation-duration:.001s !important;transition-duration:.05s !important}}
+.empty{text-align:center;padding:26px 10px 10px}
+/* ---- refined hierarchy ---- */
+.page{padding:0 18px 30px}
+.sect{padding:22px 2px 2px}
+.sect .l{font-size:10.5px;letter-spacing:.24em}
+.c{border-radius:16px;padding:14px 15px;margin-top:11px;box-shadow:0 1px 0 rgba(42,21,24,.03)}
+/* badge selector lives on the pass */
+.passbadge{margin-top:13px;padding-top:12px;border-top:1px solid rgba(255,241,181,.2)}
+.pb-lab{font-family:var(--caps);letter-spacing:.2em;font-size:9px;color:var(--hi2);margin-bottom:8px}
+.pb-row{display:flex;gap:7px}
+.pbchip{flex:1;border:1.5px solid rgba(255,241,181,.3);background:rgba(255,241,181,.09);border-radius:12px;padding:9px 4px;display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;color:var(--hi);transition:.16s;font-family:var(--caps);letter-spacing:.08em;font-size:11px}
+.pbchip:active{transform:scale(.97)}
+.pbchip .d{width:15px;height:15px;border-radius:50%;box-shadow:0 0 0 1.5px rgba(255,241,181,.5)}
+.pbchip.g .d{background:#4A7C59}
+.pbchip.r .d{background:#E0162F}
+.pbchip.y .d{background:#F0B429}
+.pbchip.sel{background:var(--hi);color:var(--gm);border-color:var(--hi);font-weight:700}
+.pbchip.sel .d{box-shadow:none}
+.pbchip.sel.r .d{background:#B8122A}
+.pb-desc{font-size:12px;color:var(--hi2);text-align:center;margin-top:9px}
+/* scan card + explainer */
+.scancard{background:var(--gm);color:var(--hi);border-radius:18px;padding:15px 15px 14px;margin-top:11px;position:relative;overflow:hidden}
+.scancard .why{font-size:12px;color:var(--hi2);line-height:1.5;margin-top:9px}
+.scancard .why b{color:var(--hi);font-weight:700}
+.whatbox{background:rgba(255,241,181,.08);border:1px solid rgba(255,241,181,.18);border-radius:13px;padding:12px 13px;margin-top:14px;text-align:left}
+.whatbox .h{font-family:var(--caps);letter-spacing:.18em;font-size:10px;color:var(--hi2)}
+.whatbox p{font-size:12.5px;color:var(--hi2);line-height:1.5;margin-top:5px}
+.whatbox p b{color:var(--hi);font-weight:700}
+.step3{display:flex;gap:9px;margin-top:13px}
+.step3 .s{flex:1;text-align:center}
+.step3 .s i{font-style:normal;font-size:18px;display:block}
+.step3 .s b{font-family:var(--caps);letter-spacing:.08em;font-size:9.5px;color:var(--hi);display:block;margin-top:3px}
+.step3 .s span{font-size:9.5px;color:var(--hi3);display:block;line-height:1.3;margin-top:1px}
+/* icebreaker feature */
+.ice-box{background:var(--paper2);border-radius:13px;padding:10px 12px;margin-top:10px}
+.ice-box .hd{display:flex;align-items:center;justify-content:space-between}
+.ice-box .lab{font-family:var(--caps);letter-spacing:.16em;font-size:9.5px;color:var(--gm)}
+.ice-box .shuf{background:none;border:none;font-family:var(--caps);letter-spacing:.1em;font-size:10px;color:var(--gm);cursor:pointer;display:flex;align-items:center;gap:4px;padding:2px}
+.ice-box .line{font-family:var(--serif);font-style:italic;font-size:15px;color:var(--ink);line-height:1.3;margin-top:5px}
+
+/* morning digest, recap, safety, banner */
+.dbanner{display:flex;gap:11px;align-items:center;width:100%;text-align:left;cursor:pointer;
+  background:linear-gradient(100deg,#FFF6E1,#fff);border:1px solid var(--ink12);border-radius:16px;padding:12px 14px;margin-top:12px}
+.dbanner .ic{font-size:20px;flex:none}
+.dbanner b{font-size:12.5px;color:var(--ink);display:block;line-height:1.25}
+.dbanner span.s{font-size:11px;color:var(--ink60);display:block;margin-top:1px}
+.dnotif{background:var(--ink);color:var(--paper);border-radius:14px;padding:11px 13px;display:flex;gap:10px;align-items:center;margin-top:4px}
+.dnotif .ic{font-size:17px;flex:none}
+.dnotif b{font-size:12.5px;display:block}
+.dnotif span{font-size:11px;opacity:.72;display:block}
+.recap{display:grid;grid-template-columns:repeat(2,1fr);gap:9px;margin-top:10px}
+.recap .s{background:#fff;border:1px solid var(--ink12);border-radius:13px;padding:11px 12px}
+.recap .s .n{font-family:var(--caps);font-size:25px;color:var(--gm);line-height:1}
+.recap .s .k{font-size:10.5px;color:var(--ink60);margin-top:3px}
+.safrow{display:flex;gap:12px;align-items:center;background:#fff;border:1px solid var(--ink12);border-radius:14px;padding:13px 14px;margin-top:10px;cursor:pointer;width:100%;text-align:left}
+.safrow .i{font-size:19px;flex:none}
+.safrow b{font-size:13.5px;color:var(--ink);display:block}
+.safrow span.s{font-size:11.5px;color:var(--ink60);display:block;margin-top:1px}
+
+/* lifecycle: locks, gate, phase banners, demo switcher */
+.locked{position:relative}
+.lockwrap{background:#fff;border:1px dashed var(--ink40);border-radius:16px;padding:18px 16px;margin-top:11px;text-align:center}
+.lockwrap .ic{font-size:22px;color:var(--ink40)}
+.lockwrap .t{font-family:var(--serif);font-style:italic;font-weight:600;font-size:17px;color:var(--ink);margin-top:5px}
+.lockwrap .s{font-size:12px;color:var(--ink60);max-width:32ch;margin:5px auto 0;line-height:1.5}
+.phasebar{display:flex;align-items:center;gap:9px;border-radius:14px;padding:11px 13px;margin-top:12px;font-size:12px}
+.phasebar.teaser{background:#15223A;color:#CFE3FF}
+.phasebar.after{background:#1C0B10;color:var(--hi)}
+.phasebar .ic{font-size:16px;flex:none}
+.phasebar b{display:block;font-size:12.5px}
+.phasebar span.s{display:block;font-size:11px;opacity:.78;margin-top:1px}
+.countdown{font-family:var(--caps);letter-spacing:.14em;font-size:11px;background:rgba(255,255,255,.14);border-radius:8px;padding:3px 8px;flex:none}
+.gatecard{background:var(--card);border:1px solid var(--ink12);border-radius:16px;padding:14px 15px;margin-top:11px}
+.gaterow{display:flex;align-items:center;gap:11px}
+.gatedot{width:10px;height:10px;border-radius:50%;flex:none}
+.gatedot.on{background:var(--green);box-shadow:0 0 0 4px rgba(62,107,78,.18)}
+.gatedot.off{background:var(--ink40)}
+.demobar{position:fixed;left:50%;transform:translateX(-50%);bottom:14px;z-index:90;display:flex;gap:5px;align-items:center;
+  background:rgba(15,7,9,.92);border:1px solid rgba(255,241,181,.2);border-radius:99px;padding:5px 6px;box-shadow:0 10px 30px -8px rgba(0,0,0,.6)}
+.demobar .dl{font-family:var(--caps);letter-spacing:.14em;font-size:8.5px;color:var(--hi3);padding:0 5px 0 7px}
+.demobar button{font-family:var(--caps);letter-spacing:.1em;font-size:10.5px;color:var(--hi2);background:none;border:none;border-radius:99px;padding:6px 11px;cursor:pointer}
+.demobar button.on{background:var(--hi);color:var(--gm)}
+@media(max-width:460px),(max-height:760px){.demobar{bottom:calc(10px + env(safe-area-inset-bottom))}}
+.reqbtn{position:relative}
+</style>
+<style>.demobar{display:none!important}</style>
+</head>
+<body>
+<div class="stage">
+  <div class="phone">
+    <div class="notch"></div>
+    <div class="app">
+      <div class="topbar">
+        <button class="iconbtn" data-act="season" aria-label="About this event">✦</button>
+        <div style="flex:1;text-align:center">
+          <div class="brand">THE GOLDEN MINGLE</div>
+          <div class="sub">ROYAL RANDWICK · SPRING '26</div>
+        </div>
+        <div style="display:flex;gap:8px">
+          <button class="iconbtn" data-act="safety" aria-label="Safety">🛡</button>
+          <button class="iconbtn" data-act="passOpen" aria-label="Your pass">◫</button>
+        </div>
+      </div>
+      <div class="page" id="page"></div>
+    </div>
+  </div>
+  <div class="stage-cap"><b>THE GOLDEN MINGLE</b> · A RACING NSW EVENT · EVERY FEATURE, ONE PAGE</div>
+</div>
+
+<!-- pass sheet -->
+<div class="sheet dark" id="sh-pass"><div class="grab"></div>
+  <div class="shead"><span class="t">Your pass</span><button class="x" data-act="hide" data-arg="sh-pass">CLOSE</button></div>
+  <div class="sbody" id="pass-body"></div>
+</div>
+<!-- scanner sheet -->
+<div class="sheet dark" id="sh-scan" style="height:84%"><div class="grab"></div>
+  <div class="shead"><span class="t" id="scan-title">Scan a badge</span><button class="x" data-act="hide" data-arg="sh-scan">DONE</button></div>
+  <div class="sbody" style="text-align:center" id="scan-body"></div>
+</div>
+<!-- chat sheet -->
+<div class="sheet" id="sh-chat" style="height:80%"><div class="grab"></div>
+  <div class="shead" style="gap:10px;justify-content:flex-start">
+    <div class="sad" id="chat-num" style="width:38px;height:38px;font-size:15px">12</div>
+    <span class="t" id="chat-name" style="flex:1">Claire</span>
+    <button class="x" data-act="hide" data-arg="sh-chat">CLOSE</button>
+  </div>
+  <div class="sbody" id="chat-log" style="display:flex;flex-direction:column;padding-bottom:8px"></div>
+  <div class="ice-row" id="ice-row"></div>
+  <div style="display:flex;gap:9px;padding:8px 16px calc(16px + env(safe-area-inset-bottom))">
+    <input id="chat-input" placeholder="Write something charming…" style="flex:1;border:1.5px solid var(--ink12);border-radius:99px;padding:11px 16px;font-family:var(--sans);font-size:14px;outline:none;color:var(--ink);background:#fff">
+    <button class="btn gm" style="width:auto;padding:11px 18px;font-size:12px" data-act="sendChat">SEND</button>
+  </div>
+</div>
+<!-- season/about sheet -->
+<div class="sheet" id="sh-season"><div class="grab"></div>
+  <div class="shead"><span class="t">The Golden Mingle ✦</span><button class="x" data-act="hide" data-arg="sh-season">CLOSE</button></div>
+  <div class="sbody" id="season-body"></div>
+</div>
+<!-- match veil -->
+<div class="veil" id="v-match">
+  <div id="v-match-sparks" style="position:absolute;inset:0;overflow:hidden;pointer-events:none"></div>
+  <div class="bloom">✦</div>
+  <div class="serif" style="font-size:36px;margin-top:8px">It's <em>mutual.</em></div>
+  <div style="font-size:13.5px;color:var(--hi2)" id="v-match-sub"></div>
+  <div style="display:flex;gap:14px;margin-top:24px;align-items:center" id="v-match-pair"></div>
+  <div class="tick" style="margin-top:20px">🎟 +1 TICKET · THE WINNER'S DRAW</div>
+  <div style="margin-top:28px;width:82%;display:flex;flex-direction:column;gap:10px">
+    <button class="btn lt" data-act="matchClose" data-arg="chat">Say hello in the Circle</button>
+    <button class="btn olt" data-act="matchClose" data-arg="">Savour it a moment</button>
+  </div>
+</div>
+<!-- draw veil -->
+<div class="veil draw" id="v-draw">
+  <div id="v-draw-sparks" style="position:absolute;inset:0;overflow:hidden;pointer-events:none"></div>
+  <div style="font-family:var(--caps);letter-spacing:.28em;font-size:12px;color:var(--hi2)">THE WINNER'S DRAW</div>
+  <div id="draw-stage" style="margin-top:18px;width:88%"></div>
+</div>
+<!-- safety sheet -->
+<div class="sheet" id="sh-safety"><div class="grab"></div>
+  <div class="shead"><span class="t">Safety</span><button class="x" data-act="hide" data-arg="sh-safety">CLOSE</button></div>
+  <div class="sbody">
+    <p style="font-size:12.5px;color:var(--ink60)">Quiet tools, always one tap away. Nobody is told you opened this.</p>
+    <button class="safrow" data-act="shareLoc"><span class="i">📍</span><span><b>Share my live location</b><span class="s">With a trusted friend, just for the afternoon</span></span></button>
+    <button class="safrow" data-act="getOut"><span class="i">🚪</span><span><b>Come find me</b><span class="s">Quietly message a friend to come to you</span></span></button>
+    <button class="safrow" data-act="report"><span class="i">🚫</span><span><b>Block or report someone</b><span class="s">Two taps, reviewed by a real person</span></span></button>
+    <div style="text-align:center;font-size:10.5px;color:var(--ink40);padding:14px 6px 2px">Racing NSW event staff are on hand all day ✦</div>
+  </div>
+</div>
+<!-- morning digest sheet -->
+<div class="sheet" id="sh-digest" style="height:90%;background:linear-gradient(180deg,#FFF6E1,var(--paper) 28%)"><div class="grab"></div>
+  <div class="shead"><span class="t">The morning after</span><button class="x" data-act="hide" data-arg="sh-digest">CLOSE</button></div>
+  <div class="sbody" id="digest-body"></div>
+</div>
+<!-- toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+const BD={g:{t:'GREEN',c:'#3E6B4E',ink:'#fff',d:'Single and ready to mingle'},
+  r:{t:'RED',c:'#7E0C1D',ink:'#FFF1B5',d:'In a relationship, here for the people'},
+  y:{t:'YELLOW',c:'#F0B429',ink:'#2A1518',d:"It's complicated…"}};
+const POOL=[
+ {n:'Claire',num:12,b:'g',zone:'Champagne Lawn',mutual:true,time:'2:38pm',opener:"I was hoping you'd connect ✦ how good was Golden Hour?"},
+ {n:'Tom',num:3,b:'y',zone:'Parade Ring',mutual:false,time:'3:05pm'},
+ {n:'Priya',num:21,b:'g',zone:'Winning Post Bar',mutual:true,time:'3:30pm',opener:'Knew it ✦ you still owe me a tip for Race 6.'},
+ {n:'Olivia',num:7,b:'r',zone:'Champagne Lawn',mutual:false,time:'4:00pm'},
+ {n:'Marcus',num:34,b:'g',zone:'Parade Ring',mutual:true,time:'4:40pm',opener:'Mutual! Coffee this week?'},
+ {n:'Sofia',num:18,b:'y',zone:'Winning Post Bar',mutual:false,time:'5:05pm'}];
+const ICE=["What's your worst race day bet of all time?","Settle it. Best dressed: you or me?","Champagne Lawn or Winning Post Bar. Defend it.","I'll pick the horse, you pick the bar?","Rate my saddlecloth number. Be honest.","Golden Hour rematch, same lawn, next meet?"];
+const PROG=[['2:30','Champagne Lawn opens, badges on ✦'],['3:15',"Race 5, trackside, members' balcony"],['4:10','The Yellow Hour at the Parade Ring bar'],['5:00','Golden Hour, last scans of the day']];
+// phase: 'teaser' (before, pass only) | 'live' (during, full + chat) | 'after' (post, matches stay, chat closed)
+// EVENT_END is configurable. Set to the real Golden Mingle end time when confirmed. Demo uses a placeholder.
+const EVENT_END='7:00pm';
+const st={name:'James',badge:'g',scans:[],firstRun:true,wallet:false,drawDone:false,scanMode:'scan',busy:false,chatWith:null,lastMatch:null,
+  phase:'live',checkedIn:true,shared:{}};
+
+const $=id=>document.getElementById(id);
+const matches=()=>st.scans.filter(g=>g.status==='match');
+const tickets=()=>matches().length;
+let toastT;
+function toast(msg){const t=$('toast');t.textContent=msg;t.classList.add('on');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('on'),2600);}
+function vib(p){if(navigator.vibrate)navigator.vibrate(p);}
+function sparkle(id,n){const h=$(id);if(!h)return;h.innerHTML='';
+  for(let i=0;i<n;i++){const s=document.createElement('span');s.className='spark';s.textContent='✦';
+    s.style.left=(4+Math.random()*92)+'%';s.style.animationDelay=(Math.random()*1.2)+'s';s.style.fontSize=(10+Math.random()*15)+'px';h.appendChild(s);}
+  setTimeout(()=>h.innerHTML='',4200);}
+function mono(n){return (n||'?').trim().charAt(0).toUpperCase();}
+function qr(el,size){if(!el)return;el.innerHTML='';
+  const c=document.createElement('canvas');c.width=c.height=147;c.style.width=c.style.height=(size||146)+'px';c.style.display='block';
+  const x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,147,147);let s=47*2654435761>>>0;
+  const r=()=>{s^=s<<13;s^=s>>>17;s^=s<<5;s>>>=0;return s/4294967296;};
+  const m=21,u=7;x.fillStyle='#2A1518';
+  for(let a=0;a<m;a++)for(let q=0;q<m;q++){const inF=(a<7&&q<7)||(a<7&&q>=m-7)||(a>=m-7&&q<7);if(!inF&&r()>0.52)x.fillRect(q*u,a*u,u,u);}
+  const fin=(ox,oy)=>{x.fillRect(ox,oy,7*u,7*u);x.fillStyle='#fff';x.fillRect(ox+u,oy+u,5*u,5*u);x.fillStyle='#2A1518';x.fillRect(ox+2*u,oy+2*u,3*u,3*u);};
+  fin(0,0);fin((m-7)*u,0);fin(0,(m-7)*u);el.appendChild(c);}
+function paint(root){(root||document).querySelectorAll('[data-qr]').forEach(el=>qr(el,+el.dataset.size||146));}
+function show(id){$(id).classList.add('on');}
+function hide(id){$(id).classList.remove('on');if(id==='sh-scan')render();}
+
+/* ---------- THE PAGE ---------- */
+function render(){
+  const P=$('page');const M=matches();
+  const pend=st.scans.filter(g=>g.status==='pending');
+  const dec=st.scans.filter(g=>g.status==='connected'||g.status==='passed');
+  const live=st.phase==='live'&&st.checkedIn;
+  const teaser=st.phase==='teaser';
+  const after=st.phase==='after';
+  P.innerHTML=`
+  ${teaser?`<div class="phasebar teaser"><span class="ic">✦</span><span style="flex:1"><b>Your pass is ready</b><span class="s">The Golden Mingle goes live on the day. Everything else unlocks then.</span></span><span class="countdown">SOON</span></div>`:''}
+  ${after?`<div class="phasebar after"><span class="ic">🌙</span><span style="flex:1"><b>The Golden Mingle has wrapped</b><span class="s">Chat is now closed. Your matches stay here, and you can still ask to swap numbers.</span></span></div>`:''}
+  ${(live&&M.length)?`<button class="dbanner" data-act="digest"><span class="ic">☀</span><span style="flex:1"><b>Tonight at ${EVENT_END}: your Morning After digest</b><span class="s">Your mutual matches, openers and a recap. Tap to preview</span></span><span style="color:var(--ink40)">→</span></button>`:''}
+  ${after?`<button class="dbanner" data-act="digest"><span class="ic">☀</span><span style="flex:1"><b>Your Morning After digest is ready</b><span class="s">Recap, your matches and number sharing. Tap to open</span></span><span style="color:var(--ink40)">→</span></button>`:''}
+  <div class="pass"><div class="stripe"></div><div style="position:relative"><div class="shimmer"></div>
+    <div class="body">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px">
+        <div><div class="lab">YOUR PASS · № 47</div>
+        <div class="nm">${st.name} M.</div>
+        <div style="font-size:11px;color:var(--hi2);margin-top:1px">Sat 24 Oct · Royal Randwick</div></div>
+        <button class="qrbox" style="border:none;cursor:pointer" data-act="passOpen" aria-label="Open full pass"><div data-qr data-size="56"></div></button>
+      </div>
+      <div class="passbadge">
+        <div class="pb-lab">YOUR BADGE · TAP TO CHANGE</div>
+        <div class="pb-row">
+          ${['g','r','y'].map(k=>`<button class="pbchip ${k} ${st.badge===k?'sel':''}" data-act="bset" data-arg="${k}"><span class="d"></span>${BD[k].t}</button>`).join('')}
+        </div>
+        <div class="pb-desc">${BD[st.badge].d}</div>
+      </div>
+    </div></div>
+  </div>
+
+  ${teaser?`
+  <div class="lockwrap"><div class="ic">🔒</div>
+    <div class="t">The mingle begins on the day</div>
+    <div class="s">Scanning, your race book, matches and the draw all wake up when The Golden Mingle goes live. For now, your pass is set and ready.</div>
+  </div>`:''}
+
+  ${(st.phase!=='teaser'&&!st.checkedIn)?`
+  <div class="gatecard">
+    <div class="gaterow"><span class="gatedot off"></span><div style="flex:1"><div class="tt">Check in to unlock</div><div class="ss">Features open once you are inside Royal Randwick.</div></div></div>
+    <button class="btn gm" style="margin-top:11px" data-act="checkin">Check in at Royal Randwick</button>
+    <div class="ss" style="text-align:center;margin-top:8px;color:var(--ink40)">In the live app this uses your location plus your ticket. Simulated here.</div>
+  </div>`:''}
+
+  ${live?`
+  <!-- SCAN CARD WITH EXPLAINER -->
+  <div class="scancard"><div class="shimmer"></div>
+    <div style="position:relative">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="font-size:22px">▣</div>
+        <div><div class="serif" style="font-size:19px;line-height:1">Meet someone? Scan their badge.</div></div>
+      </div>
+      <div class="why">It's how you remember everyone you met, and the only way to connect later. <b>No swiping, no browsing strangers.</b></div>
+      <button class="btn lt" style="margin-top:12px" data-act="scanOpen">▣ &nbsp;Scan a badge</button>
+    </div>
+  </div>`:''}
+
+  ${(live||after)?`<div class="acts">
+    <div class="act" data-act="prog"><i>▤</i><span>Programme</span></div>
+    <div class="act" data-act="map"><i>⌖</i><span>Map</span></div>
+    <div class="act" data-act="tix"><i>🎟</i><span class="tk">${tickets()} TICKET${tickets()===1?'':'S'}</span></div>
+  </div>`:''}
+
+  ${(M.length&&!teaser)?`<div class="sect"><span class="l gm">✦ WINNER'S CIRCLE</span><span class="r">${M.length} MUTUAL${M.length>1?'S':''}</span></div>`
+   +M.map(g=>`<div class="c fade">
+      <div class="prow">
+        <div class="mono" style="width:34px;height:34px;font-size:14px;border:2px solid #fff">${mono(st.name)}</div>
+        <div class="mono" style="width:34px;height:34px;font-size:14px;margin-left:-13px;border:2px solid #fff;background:var(--gm2)">${mono(g.n)}</div>
+        <div style="flex:1;margin-left:4px"><div class="tt">You &amp; ${g.n} <span style="color:var(--gm)">✦</span></div>
+        <div class="ss">№ ${g.num} · met at the ${g.zone}</div></div></div>
+      ${live?`<div class="ice-box">
+        <div class="hd"><span class="lab">🧊 ICEBREAKER</span>
+          <button class="shuf" data-act="shuffle" data-num="${g.num}">↻ ANOTHER</button></div>
+        <div class="line">“${ICE[(g.num+(g.iceIdx||0))%ICE.length]}”</div>
+      </div>`:''}
+      <div style="display:flex;gap:8px;margin-top:10px">
+        ${live?`<button class="btn gm" style="padding:10px;font-size:11px" data-act="chat" data-num="${g.num}">Open with this ✦</button>`:''}
+        ${st.shared[g.num]==='done'
+          ?`<button class="btn o" style="padding:10px;font-size:11px;opacity:.7" disabled>✓ Numbers swapped</button>`
+          :st.shared[g.num]==='sent'
+          ?`<button class="btn o" style="padding:10px;font-size:11px;opacity:.7" disabled>Request sent…</button>`
+          :`<button class="btn ${live?'o':'gm'}" style="padding:10px;font-size:11px" data-act="share" data-num="${g.num}">Request numbers</button>`}
+      </div>
+      ${after?`<div class="ss" style="margin-top:7px;color:var(--ink40)">Chat closed when the event ended. Swapping numbers keeps it going off the app.</div>`:''}
+    </div>`).join(''):''}
+
+  ${(live||after)?`<div class="sect"><span class="l">YOUR RACE BOOK</span><span class="r">${st.scans.length} SCAN${st.scans.length===1?'':'S'}</span></div>`:''}
+  ${(live&&st.firstRun)?`<div class="fr"><span>🔒</span><p>Private by design. Connecting is the only action. Stay quiet and nothing is ever shared. A connect reveals only if it is mutual.</p><button class="x" data-act="dismissFR">✕</button></div>`:''}
+  ${live?pend.map(g=>`<div class="c">
+    <div class="prow">
+      <div class="sad ${g.b==='g'?'gn':g.b==='y'?'yl':''}" style="width:38px;height:38px;font-size:15px">${g.num}</div>
+      <div style="flex:1"><div class="tt"><span class="bd ${g.b}"></span>${g.n} · № ${g.num}</div>
+      <div class="ss">${g.zone} · ${g.time}</div></div>
+      <button class="btn gm reqbtn" style="width:auto;padding:9px 16px;font-size:11px" data-act="choose" data-num="${g.num}" data-dec="connect">Connect</button></div>
+  </div>`).join(''):''}
+  ${(live||after)?dec.map(g=>`<div class="c">
+    <div class="prow">
+      <div class="sad ${g.b==='g'?'gn':g.b==='y'?'yl':''}" style="width:38px;height:38px;font-size:15px">${g.num}</div>
+      <div style="flex:1"><div class="tt"><span class="bd ${g.b}"></span>${g.n} · № ${g.num}</div>
+      <div class="ss">${g.zone} · ${g.time}</div></div>
+      <span style="font-family:var(--caps);letter-spacing:.14em;font-size:9.5px;color:var(--green)">✓ CONNECTED</span></div>
+  </div>`).join(''):''}
+  ${(live&&!st.scans.length)?`<div class="c empty">
+    <div style="font-size:22px;color:var(--ink40)">▤</div>
+    <div class="serif" style="font-size:18px;margin-top:6px;color:var(--ink)">Nobody yet. The afternoon is young.</div>
+    <div class="ss" style="max-width:32ch;margin:6px auto 0">Everyone you scan lands here. Tap Connect on anyone you would like to see again. There is no reject, so there is never any pressure.</div>
+    <button class="btn gm" style="width:auto;margin:14px auto 2px;padding:11px 24px;font-size:11.5px" data-act="scanOpen">Open the scanner</button></div>`:''}
+
+  ${(live||after)?`<div class="sect"><span class="l">THE WINNER'S DRAW</span><span class="r">9:00AM SUNDAY</span></div>
+  <div class="c" style="background:#1C0B10;border:none;color:var(--hi)">
+    <div class="ss" style="color:var(--hi2)">${tickets()?tickets()+' ticket'+(tickets()===1?'':'s')+'. Every mutual match is a ticket 🎟':'Every mutual match earns a draw ticket 🎟'}</div>
+    <div class="ss" style="color:var(--hi3);margin-top:2px">Prize: a Members' day for two at The Everest</div>
+    ${st.drawDone?`<div style="border:1.5px dashed var(--hi2);border-radius:11px;padding:9px 11px;margin-top:10px;font-size:12.5px;color:var(--hi)">✦ You won. Details on their way</div>`
+      :tickets()?`<button class="btn lt" style="margin-top:11px" data-act="draw">Watch the draw</button>`:''}
+  </div>`:''}
+
+  <div style="text-align:center;font-size:10.5px;color:var(--ink40);padding:16px 6px 4px">Connections never travel between events. Discretion by design ✦</div>`;
+  paint(P);
+  renderDemo();
+}
+
+/* ---------- pass / badge ---------- */
+function passHTML(big){
+  return `<div class="pass ${big?'reveal':''}" style="margin-top:0"><div class="stripe"></div><div style="position:relative"><div class="shimmer"></div>
+    <div class="body">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start">
+        <div><div class="lab">THE GOLDEN MINGLE ✦</div><div class="nm" style="font-size:22px">${st.name} M.</div></div>
+        <div style="text-align:right"><div class="lab">SADDLECLOTH</div><div class="num">№ 47</div></div></div>
+      <div class="qrbox" style="width:fit-content;margin:14px auto 11px;padding:11px"><div data-qr></div></div>
+      <div style="font-size:10.5px;color:var(--hi2);text-align:center">Sat 24 Oct · Gates 11:30am</div>
+      <div class="passbadge">
+        <div class="pb-lab">YOUR BADGE · TAP TO CHANGE</div>
+        <div class="pb-row">
+          ${['g','r','y'].map(k=>`<button class="pbchip ${k} ${st.badge===k?'sel':''}" data-act="bset" data-arg="${k}"><span class="d"></span>${BD[k].t}</button>`).join('')}
+        </div>
+      </div>
+    </div></div></div>`;}
+function openPass(){
+  $('pass-body').innerHTML=passHTML(false)+
+    `<button class="btn olt" style="margin-top:14px;font-size:12px" data-act="wallet">${st.wallet?'✓ In Apple Wallet':'Add to Apple Wallet'}</button>
+     <div style="text-align:center;font-size:10.5px;color:var(--hi3);margin-top:9px">Works offline · code rotates every 60s · tap the ribbon to change your badge</div>`;
+  paint($('pass-body'));show('sh-pass');}
+
+/* ---------- scanner ---------- */
+function openScan(){st.scanMode='scan';drawScan();show('sh-scan');}
+function drawScan(){
+  $('scan-title').textContent=st.scanMode==='scan'?'Scan a badge':'My code';
+  $('scan-body').innerHTML= st.scanMode==='scan'
+   ? `<div style="font-size:12.5px;color:var(--hi2);line-height:1.5">Point your camera at the QR on their pass.</div>
+      <div class="finder" id="finder" data-act="doScan" role="button" aria-label="Simulate a scan">
+        <div class="e e1"></div><div class="e e2"></div><div class="e e3"></div><div class="e e4"></div><div class="beam"></div>
+        <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:var(--caps);letter-spacing:.2em;font-size:10.5px;color:var(--hi3)" id="fh">TAP TO SIMULATE</div></div>
+      <div id="scan-last" style="margin-top:16px"></div>
+      <div class="whatbox">
+        <div class="h">WHY SCAN?</div>
+        <p>Scanning adds them to your <b>race book</b>. Later, you privately choose Connect or Pass. <b>They're only told if it's mutual.</b> Nothing public, nothing awkward.</p>
+        <div class="step3">
+          <div class="s"><i>▣</i><b>SCAN</b><span>when you meet</span></div>
+          <div class="s"><i>📓</i><b>DECIDE</b><span>connect or pass</span></div>
+          <div class="s"><i>✦</i><b>MATCH</b><span>if you both said yes</span></div>
+        </div>
+      </div>
+      <button class="btn olt" style="margin-top:14px;font-size:11.5px;max-width:240px;margin-left:auto;margin-right:auto" data-act="flip">Show my code instead</button>`
+   : `<div style="font-size:12px;color:var(--hi3)">Let them point their camera here.</div>
+      <div class="qrbox" style="width:fit-content;margin:16px auto;padding:13px"><div data-qr></div></div>
+      <div class="serif" style="font-size:18px;color:var(--hi)">№ 47 · ${st.name}</div>
+      <div style="font-size:12px;color:var(--hi3);margin-top:6px;line-height:1.5">When they scan you, you'll appear in <i>their</i> race book too.</div>
+      <button class="btn olt" style="margin-top:16px;font-size:11.5px;max-width:240px;margin-left:auto;margin-right:auto" data-act="flip">Back to scanning</button>`;
+  paint($('scan-body'));}
+function doScan(){
+  if(st.busy||st.phase!=='live'||!st.checkedIn)return;
+  const g=POOL.find(x=>!x.scanned);
+  if(!g){toast("✦ You've met everyone on the lawn. Review your race book");hide('sh-scan');return;}
+  st.busy=true;const f=$('finder');f.classList.add('busy');$('fh').textContent='READING…';vib(8);
+  setTimeout(()=>{
+    g.scanned=true;g.status='pending';st.scans.unshift(g);st.busy=false;
+    if($('finder')){f.classList.remove('busy');$('fh').textContent='TAP TO SIMULATE';}
+    const sl=$('scan-last');
+    if(sl)sl.innerHTML=`<div class="fade" style="background:rgba(255,241,181,.1);border-radius:13px;padding:10px 13px;display:flex;align-items:center;gap:10px;max-width:260px;margin:0 auto;text-align:left">
+      <div class="sad ${g.b==='g'?'gn':g.b==='y'?'yl':''}" style="width:34px;height:34px;font-size:14px">${g.num}</div>
+      <div style="flex:1"><b style="font-size:12.5px;color:var(--hi)">${g.n} · race book</b>
+      <div style="font-size:10.5px;color:var(--hi3)">${g.zone} · ${g.time}</div></div><span>✦</span></div>`;
+    vib([10,30,10]);
+  },850);}
+
+/* ---------- connect / pass / match ---------- */
+function choose(num,d){
+  if(st.phase!=='live'||!st.checkedIn)return;
+  const g=st.scans.find(x=>x.num===num);if(!g)return;
+  // Connect only. There is no on the spot Pass. Silence is the soft no.
+  if(g.mutual){g.status='match';showMatch(g);}else{g.status='connected';vib(10);toast("✦ Noted, quietly. If it's mutual, you'll both know");}
+  render();}
+function showMatch(g){
+  st.lastMatch=g;
+  $('v-match-sub').textContent='You and № '+g.num+' both said connect.';
+  $('v-match-pair').innerHTML=`<div class="mono" style="width:60px;height:60px;font-size:24px;background:rgba(0,0,0,.2);box-shadow:inset 0 0 0 2px var(--hi2)">${mono(st.name)}</div>
+    <span style="font-size:18px">✦</span>
+    <div class="mono" style="width:60px;height:60px;font-size:24px;background:rgba(0,0,0,.2);box-shadow:inset 0 0 0 2px var(--hi2)">${mono(g.n)}</div>`;
+  show('v-match');vib([20,80,20,80,40]);sparkle('v-match-sparks',18);}
+
+/* ---------- chat ---------- */
+function openChat(num){
+  if(st.phase!=='live'){toast('🌙 Chat closed when the event ended. Ask to swap numbers instead.');return;}
+  const g=st.scans.find(x=>x.num===num);if(!g)return;
+  st.chatWith=g;$('chat-name').textContent=g.n;$('chat-num').textContent=g.num;
+  if(!g.chat)g.chat=[{who:'them',t:g.opener||'We matched ✦'}];
+  const row=$('ice-row');row.innerHTML='';
+  const lab=document.createElement('span');
+  lab.style.cssText='flex:none;align-self:center;font-family:var(--caps);letter-spacing:.14em;font-size:9.5px;color:var(--ink40)';
+  lab.textContent='🧊 ICEBREAKERS';row.appendChild(lab);
+  const base=g.iceIdx||0;
+  [0,1,2].forEach(i=>{const t=ICE[(g.num+base+i)%ICE.length];const c=document.createElement('button');c.className='ice';c.textContent='“'+t+'”';
+    c.onclick=()=>{g.chat.push({who:'me',t});drawChat();vib(6);reply();};row.appendChild(c);});
+  drawChat();show('sh-chat');}
+function drawChat(){const L=$('chat-log');L.innerHTML='';
+  st.chatWith.chat.forEach(m=>{const b=document.createElement('div');b.className='bub '+(m.who==='me'?'me':'them');b.textContent=m.t;L.appendChild(b);});
+  L.scrollTop=L.scrollHeight;}
+function reply(){const g=st.chatWith;
+  if(g&&!g.replied){g.replied=true;setTimeout(()=>{if(st.chatWith===g){g.chat.push({who:'them',t:'Ha, exactly. Numbers? Mine just unlocked ✦'});drawChat();}},1300);}}
+function sendChat(){const i=$('chat-input'),t=i.value.trim();if(!t||!st.chatWith)return;
+  st.chatWith.chat.push({who:'me',t});i.value='';drawChat();vib(6);reply();}
+
+/* ---------- draw ---------- */
+function runDraw(){
+  show('v-draw');const S=$('draw-stage');
+  S.innerHTML=`<div style="font-family:var(--caps);font-size:60px;color:var(--hi)" id="spin">· · ·</div>
+    <div style="font-size:12.5px;color:var(--hi3)">${tickets()} tickets in the barrel…</div>`;
+  let i=0;const iv=setInterval(()=>{$('spin').textContent='№ '+(Math.floor(Math.random()*180)+10);
+    if(++i>14){clearInterval(iv);$('spin').textContent='№ 96';vib([20,90,20,90,50]);sparkle('v-draw-sparks',18);
+      S.innerHTML+=`<div class="reveal" style="margin-top:14px">
+        <div class="serif" style="font-size:26px;color:var(--hi)">That's you. ✦</div>
+        <div style="font-size:13px;color:var(--hi3);margin-top:4px">A Members' day for two at The Everest,<br>with Racing NSW hospitality.</div>
+        <button class="btn lt" style="margin-top:18px;width:auto;padding:12px 26px" data-act="drawClose">Lovely</button></div>`;}},120);}
+
+/* ---------- season/about ---------- */
+function openSeason(){
+  $('season-body').innerHTML=`
+  <div class="pass" style="margin-top:4px"><div class="stripe"></div>
+    <div class="body" style="text-align:center;padding:22px 16px">
+      <div style="font-size:26px">✦</div>
+      <div class="serif" style="font-size:23px;margin-top:4px">You're so invited.</div>
+      <div style="font-size:12.5px;color:var(--hi2);margin-top:6px">Sydney's most stylish singles event, trackside at Royal Randwick this Spring Racing Carnival.</div>
+    </div></div>
+  <div class="c"><div class="tt">How it works</div>
+    <div class="ss" style="margin-top:4px">Wear your badge. Scan the people you meet. Connect with anyone you would like to see again. There is no reject button, so there is never any pressure. If it is mutual, you both find out, you can chat during the event, and every match is a ticket in the draw.</div></div>
+  <div class="c"><div class="tt">Pick your badge</div>
+    <div class="ss" style="margin-top:6px"><span class="bd g"></span>Green, single &amp; ready to mingle<br><span class="bd r"></span>Red, in a relationship<br><span class="bd y"></span>Yellow, it's complicated…</div></div>
+  <div style="text-align:center;font-size:10.5px;color:var(--ink40);padding:8px 6px 0">Your details remain entirely private ✦</div>`;
+  show('sh-season');}
+function openProg(){
+  $('season-body').innerHTML=PROG.map((p,i)=>`<div class="prow" style="padding:9px 0;border-bottom:1px dashed var(--ink12)">
+    <div class="sad" style="width:42px;height:26px;font-size:11px;background:${i===0?'var(--gm)':'#fff'};color:${i===0?'var(--hi)':'var(--ink60)'};border:1px solid var(--ink12)">${p[0]}</div>
+    <div class="ss" style="color:var(--ink60)">${p[1]}</div></div>`).join('');
+  $('sh-season').querySelector('.t').textContent='The running order';
+  show('sh-season');}
+
+/* ---------- morning digest + safety ---------- */
+function buildDigest(){
+  const M=matches();
+  const counts={};st.scans.forEach(g=>counts[g.zone]=(counts[g.zone]||0)+1);
+  const sorted=Object.entries(counts).sort((a,b)=>b[1]-a[1]);
+  const topZone=sorted.length?sorted[0][0]:'the Lawn';
+  const zones=Object.keys(counts).length;
+  const shareCount=Object.values(st.shared).filter(v=>v==='done').length;
+  $('digest-body').innerHTML=`
+    <div class="dnotif"><span class="ic">✦</span><div><b>Racing NSW Events · ${EVENT_END} tonight</b><span>That's a wrap. ${M.length} ${M.length===1?'person'+' '+'said':'people said'} yes back. Chat is now closed.</span></div></div>
+    <div class="dnotif" style="margin-top:8px;background:#3a2a10"><span class="ic">☀</span><div><b>Tomorrow · 9:00am reminder</b><span>Swap numbers with your matches before the window closes at midday.</span></div></div>
+    <div class="sect" style="padding-top:16px"><span class="l gm">YOUR FORM GUIDE</span></div>
+    <div class="recap">
+      <div class="s"><div class="n">${st.scans.length}</div><div class="k">people met</div></div>
+      <div class="s"><div class="n">${M.length}</div><div class="k">mutual ${M.length===1?'match':'matches'}</div></div>
+      <div class="s"><div class="n">${zones}</div><div class="k">spots visited</div></div>
+      <div class="s"><div class="n" style="font-size:14px;font-family:var(--sans);font-weight:800;padding-top:6px">${topZone}</div><div class="k">your home straight</div></div>
+    </div>
+    ${M.length?`<div class="sect"><span class="l gm">✦ YOUR MUTUALS</span></div>`+M.map(g=>`
+      <div class="c">
+        <div class="prow">
+          <div class="mono" style="width:34px;height:34px;font-size:14px;border:2px solid #fff">${mono(st.name)}</div>
+          <div class="mono" style="width:34px;height:34px;font-size:14px;margin-left:-13px;border:2px solid #fff;background:var(--gm2)">${mono(g.n)}</div>
+          <div style="flex:1;margin-left:4px"><div class="tt">You &amp; ${g.n} ✦</div><div class="ss">Met at the ${g.zone}</div></div></div>
+        <div style="margin-top:9px">
+          ${st.shared[g.num]==='done'
+            ?`<button class="btn o" style="padding:9px;font-size:11px;width:100%;opacity:.7" disabled>✓ Numbers swapped with ${g.n}</button>`
+            :st.shared[g.num]==='sent'
+            ?`<button class="btn o" style="padding:9px;font-size:11px;width:100%;opacity:.7" disabled>Request sent to ${g.n}…</button>`
+            :`<button class="btn gm" style="padding:9px;font-size:11px;width:100%" data-act="share" data-num="${g.num}">Request numbers</button>`}
+        </div>
+      </div>`).join(''):'<div class="ss" style="padding:12px 2px">No mutuals this time. The next event is just around the corner ✦</div>'}
+    ${M.length>=2?`<button class="c" style="width:100%;text-align:left;border:1px dashed var(--ink40);cursor:pointer" data-act="tableSix">
+      <div class="tt">Table for Six ✦</div><div class="ss" style="margin-top:2px">Turn your matches into a relaxed dinner at a Racing NSW venue</div></button>`:''}
+    <div class="c" style="background:#1C0B10;border:none;color:var(--hi);margin-top:11px">
+      <div class="ss" style="color:var(--hi2)">${M.length} ticket${M.length===1?'':'s'} in the 9am Winner's Draw 🎟</div>
+      ${shareCount?`<div class="ss" style="color:var(--hi3);margin-top:3px">${shareCount} number${shareCount===1?'':'s'} swapped so far ✦</div>`:''}</div>
+    <div style="height:8px"></div>`;
+}
+
+/* ---------- actions ---------- */
+/* ---------- number sharing (two way, deliberate) ---------- */
+function requestNumbers(num){
+  const g=st.scans.find(x=>x.num===num);if(!g)return;
+  if(st.shared[num]==='done')return;
+  st.shared[num]='sent';render();vib(8);
+  toast('📲 Request sent to '+g.n+'. They confirm to swap numbers.');
+  // simulate the other person confirming
+  setTimeout(()=>{st.shared[num]='done';toast('✓ '+g.n+' agreed. Numbers swapped, off you go.');vib([10,30,10]);
+    if($('sh-digest').classList.contains('on'))buildDigest();render();},1600);
+}
+
+/* ---------- check in (simulated venue gate) ---------- */
+function checkIn(){
+  st.checkedIn=true;vib(10);toast('📍 Checked in at Royal Randwick. Everything is unlocked.');render();
+}
+
+/* ---------- lifecycle ---------- */
+function setPhase(p){
+  st.phase=p;
+  if(p==='teaser')st.checkedIn=false;
+  if(p==='live')st.checkedIn=true;
+  if(p==='after'){st.checkedIn=true;hide('sh-chat');}
+  // close any open live only surfaces when leaving live
+  if(p!=='live'){hide('sh-scan');hide('sh-chat');}
+  render();
+  if(p==='after')setTimeout(()=>toast('🌙 Event ended at '+EVENT_END+'. Chat is now closed. Your matches are saved.'),300);
+}
+
+/* ---------- demo state switcher (not in production) ---------- */
+function renderDemo(){
+  let d=$('demo');
+  if(!d){d=document.createElement('div');d.id='demo';d.className='demobar';document.body.appendChild(d);}
+  d.innerHTML=`<span class="dl">DEMO</span>`+
+    [['teaser','Teaser'],['live','Live'],['after','After']].map(([k,l])=>
+      `<button class="${st.phase===k?'on':''}" data-act="phase" data-arg="${k}">${l}</button>`).join('');
+}
+
+const ACTS={
+  season:()=>{$('sh-season').querySelector('.t').textContent='The Golden Mingle ✦';openSeason();},
+  digest:()=>{buildDigest();show('sh-digest');},
+  safety:()=>show('sh-safety'),
+  shareLoc:()=>toast('📍 Live location shared with a friend for the afternoon'),
+  getOut:()=>toast('🚪 Message sent. A friend is on the way to you'),
+  report:()=>toast('🚫 Thanks. Our team will review this privately'),
+  tableSix:()=>toast('✦ Lovely. We will suggest a few dinner times to your matches'),
+  hide:(el,a)=>hide(a),
+  passOpen:()=>openPass(),
+  bset:(el,a)=>{if(st.badge===a){render();return;}st.badge=a;vib(8);toast('✦ Badge set to '+BD[a].t.charAt(0)+BD[a].t.slice(1).toLowerCase()+'. It now shows on your pass');render();if($('sh-pass').classList.contains('on'))openPass();},
+  shuffle:(el)=>{const g=st.scans.find(x=>x.num===+el.dataset.num);if(g){g.iceIdx=(g.iceIdx||0)+1;vib(5);render();}},
+  wallet:()=>{st.wallet=true;toast('🎟 Saved to Wallet. It will surface on race day morning');openPass();},
+  prog:()=>openProg(),
+  map:()=>toast('⌖ Venue map. Lawns, bars, quiet corners (full build)'),
+  tix:()=>toast('🎟 '+tickets()+' draw ticket'+(tickets()===1?'':'s')+', one per mutual match'),
+  scanOpen:()=>openScan(),
+  doScan:()=>doScan(),
+  flip:()=>{st.scanMode=st.scanMode==='scan'?'code':'scan';drawScan();},
+  dismissFR:()=>{st.firstRun=false;render();},
+  choose:(el)=>choose(+el.dataset.num,el.dataset.dec),
+  matchClose:(el,a)=>{hide('v-match');render();if(a&&st.lastMatch)setTimeout(()=>openChat(st.lastMatch.num),300);},
+  chat:(el)=>openChat(+el.dataset.num),
+  share:(el)=>requestNumbers(+el.dataset.num),
+  checkin:()=>checkIn(),
+  phase:(el,a)=>setPhase(a),
+  sendChat:()=>sendChat(),
+  draw:()=>runDraw(),
+  drawClose:()=>{hide('v-draw');st.drawDone=true;render();}
+};
+document.addEventListener('click',e=>{const el=e.target.closest('[data-act]');if(!el)return;
+  const fn=ACTS[el.dataset.act];if(fn)fn(el,el.dataset.arg);});
+$('chat-input').addEventListener('keydown',e=>{if(e.key==='Enter')sendChat();});
+render();
+
+window.addEventListener('message',function(e){if(e&&e.data&&e.data.gmPhase&&['teaser','live','after'].indexOf(e.data.gmPhase)>-1){try{setPhase(e.data.gmPhase);}catch(_){}}});
+</script>
+</body>
+</html>
