@@ -1390,19 +1390,28 @@ function toast(msg){
 function layoutSticky(){
   const hdr=document.getElementById('appHeader');
   const b=document.getElementById('budgetSticky');
-  if(hdr&&b) b.style.top=(56+hdr.offsetHeight-10)+'px';
+  // hdr.offsetTop already includes the top-spacer (safe-area/top-chrome) height,
+  // so this tracks the real header position rather than a hardcoded 56px.
+  if(hdr&&b) b.style.top=(hdr.offsetTop+hdr.offsetHeight-10)+'px';
 }
 window.addEventListener('resize',layoutSticky);
 window.addEventListener('load',layoutSticky);
+window.addEventListener('orientationchange',layoutSticky);
 
-/* Fit the phone to the viewport on desktop */
+/* Scale the device-preview frame to fit the desktop viewport.
+   Only runs in frame mode (≥900px wide AND ≥600px tall — matches the CSS
+   @media guard); in full-bleed mode it clears any transform so the app
+   fills the viewport natively. */
 function fitPhone(){
-  if(window.innerWidth<480) { document.getElementById('phone').style.transform=''; return; }
+  const phone=document.getElementById('phone');
+  const framed = window.innerWidth>=900 && window.innerHeight>=600;
+  if(!framed){ phone.style.transform=''; phone.style.marginBottom=''; return; }
   const s=Math.round(Math.min(1,(window.innerHeight-56)/876,(window.innerWidth-32)/417)*100)/100;
-  document.getElementById('phone').style.transform=`scale(${s})`;
-  document.getElementById('phone').style.marginBottom = `${-(876*(1-s))}px`;
+  phone.style.transform=`scale(${s})`;
+  phone.style.marginBottom = `${-(876*(1-s))}px`;
 }
 window.addEventListener('resize',fitPhone);
+window.addEventListener('orientationchange',fitPhone);
 
 /* ── 3.5 · Onboarding ─────────────────────────────────────────── */
 /* ╔══════════════════════════════════════════════════════════════╗

@@ -44,6 +44,8 @@
 <script src="js/tailwind.config.js"></script>
 
 <link rel="stylesheet" href="css/app.css">
+<!-- Debug: ?insets=1 simulates device safe-areas (Dynamic Island + home indicator) -->
+<script>if(location.search.indexOf('insets')>-1)document.documentElement.classList.add('demo-insets');</script>
 </head>
 
 <body>
@@ -69,8 +71,8 @@
     <div id="appScroll" class="font-body">
       <div class="aurora"></div>
 
-      <!-- Spacer: keeps in-flow content clear of the island/status zone -->
-      <div style="height:56px" aria-hidden="true"></div>
+      <!-- Spacer: reserves the top-chrome / safe-area-top height (see --app-top) -->
+      <div class="top-spacer" aria-hidden="true"></div>
 
       <!-- ───────── Glass header: brand + account circle + race strip ─────────
            Sticks at 56px so it can never slide under the Dynamic Island. -->
