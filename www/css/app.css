@@ -13,9 +13,11 @@
 
 /* Desktop studio backdrop — matches the supplied white mockup shot */
 html,body{ margin:0; background:#F5F6F8; font-family:Inter,sans-serif;
-  -webkit-font-smoothing:antialiased; overscroll-behavior:none; }
+  -webkit-font-smoothing:antialiased; overscroll-behavior:none; overflow:hidden; }
 html{ height:100%; }
-body{ min-height:100vh; min-height:100dvh; }
+/* Lock the document to the viewport so only #appScroll scrolls — the whole
+   app fits the phone with no page-level scroll or rubber-banding. */
+body{ height:100vh; height:100dvh; }
 
 .display{ font-family:Archivo,sans-serif; font-weight:900; font-stretch:118%;
   text-transform:uppercase; letter-spacing:.01em; }
@@ -38,12 +40,20 @@ body{ min-height:100vh; min-height:100dvh; }
 #phone::before,#phone::after{ display:none; }
 #screen{ position:relative; width:100%; max-width:500px;
   height:100vh; height:100dvh; overflow:hidden; background:#040C1F;
-  /* Top-chrome allowance: real safe-area on device, 56px in the preview frame. */
-  --app-top: var(--sat); }
+  /* Room reserved for the device's real status bar. Uses the OS safe-area
+     inset, with a 24px floor so there's always clearance even when the
+     platform reports 0 (e.g. some Android WebViews). 56px in the preview. */
+  --app-top: max(var(--sat), 24px); }
 
-/* The header sticks below the top chrome; the spacer reserves the same height. */
-.top-spacer{ height:var(--app-top); }
-#appHeader{ top:var(--app-top); }
+/* Integrated app header: a full-width glass top bar whose surface fills the
+   status-bar safe area (padding-top:var(--app-top)) so the OS bar sits on the
+   app itself. Pinned at top:0 and part of the scrolling app shell. */
+.top-spacer{ display:none; }   /* header now reserves the top-chrome height itself */
+#appHeader{ top:0; padding-top:var(--app-top);
+  background:rgba(16,33,66,.72);
+  -webkit-backdrop-filter:blur(30px) saturate(180%); backdrop-filter:blur(30px) saturate(180%);
+  border-bottom:1px solid rgba(255,255,255,.10);
+  box-shadow:0 8px 24px rgba(2,8,23,.32); }
 
 /* Simulated hardware chrome — hidden here, shown only in the preview frame. */
 .d-island{ position:absolute; top:11px; left:50%; transform:translateX(-50%);
@@ -93,8 +103,8 @@ body{ min-height:100vh; min-height:100dvh; }
 /* Fake OS status bar ("9:41") — preview frame only; the device draws its own. */
 .status-bar{ position:absolute; top:0; left:0; right:0; height:48px;
   padding-top:14px; z-index:70; pointer-events:none; display:none; }
-/* Blur veil under the top chrome; on device it covers the safe-area-top zone. */
-.top-veil{ position:absolute; top:0; left:0; right:0; height:calc(var(--app-top) + 4px); z-index:65;
+/* Blur veil — no longer needed now the header itself covers the top zone. */
+.top-veil{ display:none; position:absolute; top:0; left:0; right:0; height:calc(var(--app-top) + 4px); z-index:65;
   pointer-events:none;
   -webkit-backdrop-filter:blur(16px) saturate(150%); backdrop-filter:blur(16px) saturate(150%);
   background:linear-gradient(180deg, rgba(4,12,31,.85) 35%, rgba(4,12,31,.35) 75%, transparent);
@@ -451,8 +461,8 @@ input{ transition:border-color .3s ease, box-shadow .3s ease; }
   #phone::after{ content:''; display:block; position:absolute; right:-2.5px; top:248px; width:3px; height:96px;
     background:#26282d; border-radius:2px; }
   #screen{ width:393px; max-width:none; height:852px; border-radius:50px; margin:0; --app-top:56px; }
-  .d-island{ display:block; }
+  /* Simulated iOS status bar + Dynamic Island removed — the top is left as
+     blank reserved space for the phone's real status bar in every mode. */
   .home-bar{ display:block; }
-  .status-bar{ display:flex; }
-  .top-veil{ height:58px; }
+  .top-veil{ height:60px; }
 }
