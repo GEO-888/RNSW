@@ -1362,6 +1362,7 @@ function applyUserName(){
   const ha=document.getElementById('headerAvatar'); if(ha) ha.textContent=ini;
   const sa=document.getElementById('sheetAvatar'); if(sa) sa.textContent=ini;
   const mn=document.getElementById('memName'); if(mn) mn.textContent=name;
+  updateAuthUI();
 }
 function saveUserName(){
   const inp=document.getElementById('userNameInput');
@@ -1372,6 +1373,7 @@ function saveUserName(){
 
 /* Account sheet */
 function openSheet(){ document.getElementById('sheetWrap').classList.add('open');
+  updateAuthUI();
   document.getElementById('dashBubble').style.opacity='0'; }
 function closeSheet(){ document.getElementById('sheetWrap').classList.remove('open');
   if(dashOn) document.getElementById('dashBubble').style.opacity=''; }
@@ -1443,6 +1445,65 @@ function maybeShowOnboarding(){
   else { ob.classList.remove('gone'); goOnboard(0); }
 }
 
+/* ── First-run login gate (guest-first) ───────────────────────────
+   The app is fully browsable as a guest; an account is only needed for
+   Fantasy, linked tickets and The Golden Mingle. rnsw_auth = '' (never
+   chosen) | 'guest' | 'member'. requireAccount()/isSignedIn() are ready
+   to gate those features when a real auth backend is wired. */
+function authStatus(){ try{ return localStorage.getItem('rnsw_auth')||''; }catch(e){ return ''; } }
+function isSignedIn(){ return authStatus()==='member'; }
+function setAuth(kind){ try{ localStorage.setItem('rnsw_auth',kind); }catch(e){} }
+
+let _authFirstRun=false, pendingAction=null;
+function openAuthGate(ctx){
+  const g=document.getElementById('authGate'); if(!g) return;
+  if(ctx) _authFirstRun=false;
+  const h=document.getElementById('authHeadline'), s=document.getElementById('authSub');
+  if(h) h.textContent = (ctx&&ctx.title) ? ctx.title : 'Welcome to Racing NSW';
+  if(s) s.textContent = (ctx&&ctx.sub) ? ctx.sub : 'Browse live racing, results, schedules and more — no account needed.';
+  g.classList.remove('gone');
+}
+function maybeShowAuthGate(){
+  const g=document.getElementById('authGate'); if(!g) return false;
+  if(authStatus()){ g.classList.add('gone'); return false; }   // already chose guest/member
+  _authFirstRun=true; openAuthGate(null); return true;          // first run → show gate, defer onboarding
+}
+function _dismissAuthGate(){ const g=document.getElementById('authGate'); if(g) g.classList.add('gone'); }
+function _afterAuth(){
+  updateAuthUI();
+  if(pendingAction){ const a=pendingAction; pendingAction=null; a(); return; }
+  if(_authFirstRun){ _authFirstRun=false; maybeShowOnboarding(); }
+}
+function continueAsGuest(){
+  if(!authStatus()) setAuth('guest');   // never downgrade a member
+  _dismissAuthGate(); _afterAuth();
+}
+function authEmailSignIn(){
+  const em=document.getElementById('authEmail'), nm=document.getElementById('authName');
+  const email=((em&&em.value)||'').trim(), name=((nm&&nm.value)||'').trim();
+  if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){ if(em){ em.classList.add('err'); em.focus(); } toast('Enter a valid email address'); return; }
+  if(em) em.classList.remove('err');
+  setAuth('member');
+  try{ localStorage.setItem('rnsw_email',email); }catch(e){}
+  const display = name || email.split('@')[0].replace(/[._-]+/g,' ').replace(/\b\w/g,c=>c.toUpperCase());
+  try{ localStorage.setItem('rnsw_username',display); }catch(e){}
+  applyUserName();
+  _dismissAuthGate();
+  toast('Signed in — welcome, '+display.split(' ')[0]+' 👋');
+  _afterAuth();
+}
+/* Reusable gate for member-only features (wire into Fantasy/tickets/Mingle later). */
+function requireAccount(ctx,onOk){ if(isSignedIn()) return onOk(); pendingAction=onOk; openAuthGate(ctx); }
+function signOut(){ setAuth('guest'); try{ localStorage.removeItem('rnsw_email'); }catch(e){} updateAuthUI(); toast('You’ve been signed out'); }
+function updateAuthUI(){
+  const signedIn=isSignedIn();
+  const sub=document.getElementById('sheetSub');
+  if(sub){ let email=''; try{ email=localStorage.getItem('rnsw_email')||''; }catch(e){}
+    sub.textContent = signedIn ? ('Signed in'+(email?' · '+email:'')) : 'Browsing as guest — sign in to save your details'; }
+  const inRow=document.getElementById('authSignInRow'); if(inRow) inRow.classList.toggle('hidden', signedIn);
+  const outRow=document.getElementById('signOutRow'); if(outRow) outRow.classList.toggle('hidden', !signedIn);
+}
+
 /* ╔══════════════════════════════════════════════════════════════╗
    ║ SECTION 9 · BOOT                                             ║
    ╚══════════════════════════════════════════════════════════════╝ */
@@ -1470,7 +1531,7 @@ renderTodayFeed();
 renderPastRounds();     // 3.3 — fantasy points history
 render();               // budget, grid, roster, cap alert (reflects restored picks)
 layoutSticky();
-maybeShowOnboarding();  // 3.5 — first-run welcome
+if(!maybeShowAuthGate()) maybeShowOnboarding();  // login gate on first run, else onboarding
 
 /* 5.1 — initialise from URL hash so #/fantasy etc. deep-links work */
 (function(){

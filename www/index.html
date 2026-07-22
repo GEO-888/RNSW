@@ -378,11 +378,13 @@
                 onblur="saveUserName()" onkeydown="if(event.key==='Enter'){this.blur();}"
                 class="display-tight text-[16px] text-white bg-transparent outline-none border-b border-transparent focus:border-sky-brand/60 w-full"
                 value="Jack Webster" />
-              <div class="text-sky-soft text-[12.5px] font-semibold">Member since 2021 · Sydney</div>
+              <div id="sheetSub" class="text-sky-soft text-[12.5px] font-semibold">Member since 2021 · Sydney</div>
             </div>
             <button class="tap ml-auto w-10 h-10 rounded-full glass glass-pill grid place-items-center text-sky-soft" onclick="closeSheet()" aria-label="Close">✕</button>
           </div>
           <div class="space-y-2.5 text-white">
+            <!-- Guest-only: sign in / create account (revealed by updateAuthUI) -->
+            <button id="authSignInRow" class="tap w-full btn-primary rounded-2xl px-4 py-4 flex items-center justify-between text-navy-950 hidden" onclick="closeSheet(); openAuthGate({title:'Sign in to Racing NSW', sub:'Create an account for Fantasy, linked tickets and The Golden Mingle.'})"><span class="font-extrabold text-[14.5px]">🔑 Sign in / Create account</span><span class="text-navy-950 text-lg">›</span></button>
             <button class="tap w-full glass rounded-2xl px-4 py-4 flex items-center justify-between" onclick="openTickets()"><span class="font-bold text-[14.5px]">🎟️ My Tickets &amp; Passes</span><span class="text-sky-brand text-lg">›</span></button>
             <button class="tap w-full glass rounded-2xl px-4 py-4 flex items-center justify-between" onclick="openTravel()"><span class="font-bold text-[14.5px]">🚆 Getting Here &amp; Travel</span><span class="text-sky-brand text-lg">›</span></button>
             <button class="tap w-full glass rounded-2xl px-4 py-4 flex items-center justify-between" onclick="openAlerts()"><span class="font-bold text-[14.5px]">🔔 Race Alerts</span><span class="text-sky-brand text-lg">›</span></button>
@@ -398,7 +400,7 @@
             <button class="tap w-full glass rounded-2xl px-4 py-4 flex items-center justify-between" onclick="openAccessibility()"><span class="font-bold text-[14.5px]">Aa Text Size &amp; Accessibility</span><span class="text-sky-brand text-lg">›</span></button>
             <button class="tap w-full glass rounded-2xl px-4 py-4 flex items-center justify-between" onclick="openMembership()"><span class="font-bold text-[14.5px]">💳 Membership &amp; Payments</span><span class="text-sky-brand text-lg">›</span></button>
             <button class="tap w-full glass rounded-2xl px-4 py-4 flex items-center justify-between" onclick="toast('🛟 Help centre & Responsible Wagering — GambleAware 1800 858 858')"><span class="font-bold text-[14.5px]">🛟 Help &amp; Responsible Wagering</span><span class="text-sky-brand text-lg">›</span></button>
-            <button class="tap w-full glass rounded-2xl px-4 py-4 flex items-center justify-between text-rnswred" onclick="toast('You’ve been signed out')"><span class="font-bold text-[14.5px]">Sign out</span></button>
+            <button id="signOutRow" class="tap w-full glass rounded-2xl px-4 py-4 flex items-center justify-between text-rnswred hidden" onclick="signOut()"><span class="font-bold text-[14.5px]">Sign out</span></button>
           </div>
 
           <!-- Racing NSW network (moved here from the old Menu tab) -->
@@ -695,6 +697,34 @@
 
     <!-- Toast -->
     <div id="toast" class="absolute left-1/2 -translate-x-1/2 bottom-28 z-[90] bg-white text-navy-950 font-bold text-[13px] rounded-2xl px-4 py-3 shadow-xl opacity-0 pointer-events-none transition-opacity duration-500 max-w-[86%] text-center"></div>
+
+    <!-- ───────── FIRST-RUN LOGIN GATE (guest-first) ─────────
+         Shown once on first open. Everything is browsable as a guest;
+         an account is only needed for Fantasy, linked tickets and the
+         Golden Mingle. Can be reopened later from the account sheet. -->
+    <div id="authGate" class="gone" aria-label="Sign in to Racing NSW">
+      <div class="aurora"></div>
+      <div class="auth-inner relative z-10">
+        <div class="text-center mb-7">
+          <div class="display text-[30px] leading-none">RACING <span class="text-sky-brand">NSW</span></div>
+          <div class="text-[9px] font-bold tracking-[.34em] text-sky-soft mt-1">OFFICIAL APP</div>
+        </div>
+        <h1 id="authHeadline" class="display text-[24px] leading-tight text-center mb-2">Welcome to Racing NSW</h1>
+        <p id="authSub" class="text-sky-soft text-[13.5px] leading-relaxed text-center mb-7">Browse live racing, results, schedules and more — no account needed.</p>
+
+        <button class="tap btn-primary w-full py-4 display-tight text-[15px]" onclick="continueAsGuest()">Continue as guest</button>
+
+        <div class="auth-divider my-5">or sign in to unlock more</div>
+
+        <label class="block text-[11px] font-extrabold tracking-[.14em] text-sky-soft mb-1.5">EMAIL</label>
+        <input id="authEmail" class="auth-input mb-3.5" type="email" inputmode="email" autocomplete="email" placeholder="you@email.com" />
+        <label class="block text-[11px] font-extrabold tracking-[.14em] text-sky-soft mb-1.5">NAME <span class="font-semibold tracking-normal text-sky-soft/60">(optional)</span></label>
+        <input id="authName" class="auth-input mb-4" type="text" autocomplete="name" placeholder="Your name" />
+        <button class="tap w-full py-3.5 rounded-2xl glass glass-strong display-tight text-[13.5px] text-white" onclick="authEmailSignIn()">Sign in / Create account</button>
+
+        <p class="text-[11.5px] text-sky-soft/80 leading-relaxed text-center mt-6">An account is only needed for <b class="text-white">Fantasy</b>, <b class="text-white">linked tickets</b> and <b class="text-white">The Golden Mingle</b>.<br>Apple &amp; Google sign-in coming soon.</p>
+      </div>
+    </div>
 
     <!-- ───────── 3.5 ONBOARDING OVERLAY (first run only) ───────── -->
     <div id="onboard" class="gone" aria-label="Welcome to Racing NSW">
