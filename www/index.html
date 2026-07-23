@@ -3,6 +3,10 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<meta name="theme-color" content="#040C1F">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="mobile-web-app-capable" content="yes">
 <title>Racing NSW — Official App</title>
 
 <!-- ============================================================
@@ -52,16 +56,14 @@
 <div id="stage">
 <div id="phone">
   <div id="screen">
+    <!-- ───────── Simulated iOS chrome — DESKTOP PREVIEW ONLY ─────────
+         Shown only at ≥900px (see media query). Hidden completely on real
+         devices, where the OS draws its own. Display is controlled purely
+         in CSS (no display utility here) so it can never leak onto phones. -->
     <div class="d-island" aria-hidden="true"></div>
-
-    <!-- ───────── FIXED CHROME (never scrolls) ─────────
-         Status bar + blur veil live at #screen level so the
-         Dynamic Island zone is always cleanly veiled and content
-         glides beneath it, exactly as iOS renders it. -->
-    <div class="top-veil" aria-hidden="true"></div>
-    <div class="status-bar flex items-center justify-between px-7 text-[13.5px] font-semibold text-white">
-      <span>9:41</span>
-      <span class="flex items-center gap-1.5">
+    <div class="status-bar" aria-hidden="true">
+      <span class="status-time">9:41</span>
+      <span class="status-icons">
         <svg width="17" height="11" viewBox="0 0 17 11" fill="white"><rect x="0" y="7" width="3" height="4" rx="1"/><rect x="4.5" y="5" width="3" height="6" rx="1"/><rect x="9" y="2.5" width="3" height="8.5" rx="1"/><rect x="13.5" y="0" width="3" height="11" rx="1"/></svg>
         <svg width="16" height="11" viewBox="0 0 16 11" fill="white"><path d="M8 9.5a1.4 1.4 0 1 0 0 2.8 1.4 1.4 0 0 0 0-2.8Z" transform="translate(0,-1.6)"/><path d="M8 6.2c1.5 0 2.9.6 3.9 1.6l-1.3 1.3A3.7 3.7 0 0 0 8 8a3.7 3.7 0 0 0-2.6 1.1L4.1 7.8A5.5 5.5 0 0 1 8 6.2Z"/><path d="M8 3c2.4 0 4.6.95 6.2 2.5l-1.3 1.3A6.8 6.8 0 0 0 8 4.8a6.8 6.8 0 0 0-4.9 2L1.8 5.5A8.7 8.7 0 0 1 8 3Z"/></svg>
         <svg width="25" height="12" viewBox="0 0 25 12" fill="none"><rect x=".5" y=".5" width="21" height="11" rx="3" stroke="white" opacity=".5"/><rect x="2" y="2" width="15" height="8" rx="1.6" fill="white"/><path d="M23 4v4c1-.3 1.6-1 1.6-2S24 4.3 23 4Z" fill="white" opacity=".5"/></svg>

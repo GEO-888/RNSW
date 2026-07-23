@@ -11,8 +11,10 @@
    + home indicator (bottom) so safe-area reservation can be tested in a browser. */
 .demo-insets{ --sat:59px; --sab:34px; }
 
-/* Desktop studio backdrop — matches the supplied white mockup shot */
-html,body{ margin:0; background:#F5F6F8; font-family:Inter,sans-serif;
+/* Mobile-first root: the app navy fills the whole viewport (incl. the
+   status-bar safe area) so nothing white ever shows through the notch/home
+   indicator. The desktop studio backdrop (#F5F6F8) is restored at ≥900px. */
+html,body{ margin:0; background:#040C1F; font-family:Inter,sans-serif;
   -webkit-font-smoothing:antialiased; overscroll-behavior:none; overflow:hidden; }
 html{ height:100%; }
 /* Lock the document to the viewport so only #appScroll scrolls — the whole
@@ -100,9 +102,13 @@ body{ height:100vh; height:100dvh; }
    These sit at #screen level (outside the scroller) so they never
    move. The veil blurs and fades content gliding under the
    Dynamic Island zone — the iOS treatment. */
-/* Fake OS status bar ("9:41") — preview frame only; the device draws its own. */
-.status-bar{ position:absolute; top:0; left:0; right:0; height:48px;
-  padding-top:14px; z-index:70; pointer-events:none; display:none; }
+/* Fake OS status bar ("9:41") — preview frame only; the device draws its own.
+   display:none here (no Tailwind display utility on the element), so it is
+   robustly hidden on real devices and can only be shown by the ≥900px block. */
+.status-bar{ display:none; position:absolute; top:0; left:0; right:0; height:48px;
+  align-items:center; justify-content:space-between; padding:14px 28px 0;
+  color:#fff; font-size:13.5px; font-weight:600; z-index:70; pointer-events:none; }
+.status-icons{ display:flex; align-items:center; gap:6px; }
 /* Blur veil — no longer needed now the header itself covers the top zone. */
 .top-veil{ display:none; position:absolute; top:0; left:0; right:0; height:calc(var(--app-top) + 4px); z-index:65;
   pointer-events:none;
@@ -188,12 +194,16 @@ body{ height:100vh; height:100dvh; }
 @keyframes viewInLeft{ from{opacity:0; transform:translateX(-38px);} to{opacity:1; transform:none;} }
 @media (prefers-reduced-motion:reduce){ .view.active{animation:none;} #dashBubble, #dashBubble::after{animation:none!important;} *{transition-duration:.01ms!important;} }
 
-/* Floating Liquid-Glass tab bar.
-   Lifted clear of the home indicator: bottom gap grows by safe-area-inset-bottom,
-   and internal padding-bottom keeps the tappable row above the inset. */
-#tabbar{ position:absolute; left:calc(14px + var(--sal)); right:calc(14px + var(--sar));
-  bottom:calc(16px + var(--sab)); z-index:60;
-  display:flex; padding:6px; gap:2px; }
+/* Bottom tab bar — docked flush to the bottom edge, full width. Its
+   padding-bottom grows by safe-area-inset-bottom so the tappable row sits
+   above the home indicator while the glass extends down behind it. */
+#tabbar{ position:absolute; left:0; right:0; bottom:0; z-index:60;
+  display:flex; gap:3px;
+  padding:8px calc(10px + var(--sar)) calc(8px + var(--sab)) calc(10px + var(--sal));
+  background:rgba(9,18,36,.82);
+  -webkit-backdrop-filter:blur(30px) saturate(180%); backdrop-filter:blur(30px) saturate(180%);
+  border-top:1px solid rgba(255,255,255,.10);
+  box-shadow:0 -8px 30px rgba(2,8,23,.45); }
 .nav-btn{ min-height:54px; flex:1; display:flex; flex-direction:column; align-items:center;
   justify-content:center; gap:2px; color:#9AB1D6; font-weight:700; font-size:10px;
   letter-spacing:.07em; border-radius:999px;
@@ -439,12 +449,24 @@ input{ transition:border-color .3s ease, box-shadow .3s ease; }
    This block re-applies the desktop device-preview frame.
    ════════════════════════════════════════════════════════════════ */
 
-/* Small phones (iPhone SE, compact Androids ~320–374px):
-   tighten the floating nav margins so 5 tabs never crowd. Tap targets
-   stay ≥44px (.tap / .nav-btn min-heights are untouched). */
-@media (max-width:374px){
-  #tabbar{ left:calc(8px + var(--sal)); right:calc(8px + var(--sar)); padding:5px; }
+/* Small phones — iPhone SE / compact Android (320–375px).
+   Tighten horizontal padding so 5 tabs never crowd; tap targets stay ≥44px
+   (.tap / .nav-btn / .seg min-heights untouched). Labels drop to icons at
+   ≤360px (rule further below). */
+@media (max-width:375px){
+  #tabbar{ gap:2px; padding-left:calc(6px + var(--sal)); padding-right:calc(6px + var(--sar)); }
+  .nav-btn{ font-size:9px; letter-spacing:.04em; }
   #dashBubble{ width:46px; height:46px; }
+}
+
+/* Standard phones (376–430px) and large phones / Pro Max & Ultra (431–500px)
+   use the mobile-first base as-is: #screen is full-width up to its 500px cap. */
+
+/* Tablets & large landscape (600px, below the desktop frame): centre the
+   app at a comfortable reading width rather than stretching it edge-to-edge. */
+@media (min-width:600px) and (max-width:899px){
+  #stage, #phone{ background:#0a0f1a; }
+  #screen{ max-width:460px; box-shadow:0 0 0 1px rgba(255,255,255,.05), 0 24px 80px rgba(0,0,0,.5); }
 }
 
 /* Desktop / large-landscape: centred device preview frame.
