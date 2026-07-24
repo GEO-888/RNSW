@@ -4,15 +4,29 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>The Golden Mingle</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,400;1,500;1,600&family=Bebas+Neue&family=DM+Sans:ital,opsz,wght@0,9..40,400..800;1,9..40,500..700&display=swap" rel="stylesheet">
 <style>
+/* Fonts vendored locally (no CDN) so the Golden Mingle renders offline in the
+   native WebView. Cormorant Garamond (OFL) is the main/display face; Helvetica
+   Neue — the app's typeface — is the body. Both live in assets/fonts. */
+@font-face{ font-family:'Cormorant Garamond'; font-weight:300 700; font-style:normal;
+  font-display:swap; src:url("assets/fonts/cormorant.woff2") format("woff2"); }
+@font-face{ font-family:'Cormorant Garamond'; font-weight:300 700; font-style:italic;
+  font-display:swap; src:url("assets/fonts/cormorant-italic.woff2") format("woff2"); }
+@font-face{ font-family:'Helvetica Neue'; font-weight:400; font-style:normal;
+  font-display:swap; src:url("assets/fonts/hn-regular.woff2") format("woff2"); }
+@font-face{ font-family:'Helvetica Neue'; font-weight:400; font-style:italic;
+  font-display:swap; src:url("assets/fonts/hn-italic.woff2") format("woff2"); }
+@font-face{ font-family:'Helvetica Neue'; font-weight:500; font-style:normal;
+  font-display:swap; src:url("assets/fonts/hn-medium.woff2") format("woff2"); }
+@font-face{ font-family:'Helvetica Neue'; font-weight:600 800; font-style:normal;
+  font-display:swap; src:url("assets/fonts/hn-bold.woff2") format("woff2"); }
 :root{
   --gm:#B8122A; --gm2:#8E0E21; --gm3:#5C0A18; --hi:#FFF1B5; --hi2:rgba(255,241,181,.86); --hi3:rgba(255,241,181,.6);
   --paper:#FAF4DE; --paper2:#F3EBCB; --ink:#2A1518; --ink60:rgba(42,21,24,.6); --ink40:rgba(42,21,24,.4); --ink12:rgba(42,21,24,.12);
   --green:#3E6B4E; --gold:#E0A11B; --goldbg:#F0B429; --card:#FFFFFF;
-  --serif:'Cormorant Garamond',serif; --caps:'Bebas Neue',sans-serif; --sans:'DM Sans',sans-serif;
+  /* Golden Mingle type: Cormorant Garamond is the main/display face (serif +
+     the former Bebas caps role); Helvetica Neue is the body text. */
+  --serif:'Cormorant Garamond',serif; --caps:'Cormorant Garamond',serif; --sans:'Helvetica Neue',sans-serif;
   --ease:cubic-bezier(.22,.9,.3,1);
 }
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
