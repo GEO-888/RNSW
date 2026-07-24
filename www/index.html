@@ -39,15 +39,17 @@
      squad of 5 jockeys + 2 trainers, one captain at 2× points.
      ============================================================ -->
 
-<script src="https://cdn.tailwindcss.com"></script>
+<!-- Tailwind, vendored offline. The cdn.tailwindcss.com Play CDN is gone;
+     css/tailwind.css is compiled from the class names in index.html + app.js
+     by `npm run build:css` (tailwind.config.cjs). Rebuild after adding new
+     utility classes. Loaded before app.css so app.css can override. -->
+<link rel="stylesheet" href="css/tailwind.css">
 
 <!-- Helvetica Neue is vendored locally (see css/app.css @font-face). No font
      CDN — the app renders fully offline in the native WebView. Preload the two
      faces used above the fold so first paint isn't a flash of fallback text. -->
 <link rel="preload" as="font" type="font/woff2" href="assets/fonts/hn-regular.woff2" crossorigin>
 <link rel="preload" as="font" type="font/woff2" href="assets/fonts/hn-cond-black.woff2" crossorigin>
-
-<script src="js/tailwind.config.js"></script>
 
 <!-- Data layer. Order matters: config defines the switches, data-service
      reads them, app.js consumes the service. All three are plain globals

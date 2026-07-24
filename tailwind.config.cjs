@@ -7,7 +7,7 @@
  *
  * `content` scans every source that emits Tailwind class names. All classes
  * appear as literal tokens (dynamic string parts in app.js build custom
- * app.css classes like pill-*/msg-*, not Tailwind utilities), so text
+ * app.css classes like "pill-" and "msg-", not Tailwind utilities), so text
  * scanning captures the full set the Play CDN generated at runtime.
  */
 module.exports = {
@@ -22,7 +22,10 @@ module.exports = {
         sky:  { brand: '#5BB8FF', soft: '#A7CDEF' },
         rnswred: '#E8132E', gold: '#F2B33D',
       },
-      fontFamily: { display: ['Archivo', 'sans-serif'], body: ['Inter', 'sans-serif'] },
+      fontFamily: {
+        display: ['"Helvetica Neue Condensed"', '"Helvetica Neue"', 'sans-serif'],
+        body: ['"Helvetica Neue"', 'sans-serif'],
+      },
     },
   },
 }

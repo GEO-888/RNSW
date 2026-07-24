@@ -4,6 +4,7 @@
   "private": true,
   "description": "Racing NSW mobile app",
   "scripts": {
+    "build:css": "tailwindcss -c tailwind.config.cjs -i tailwind.input.css -o www/css/tailwind.css --minify",
     "serve": "npx serve www -l 5173",
     "sync": "npx cap sync",
     "ios": "npx cap sync ios && npx cap open ios",
