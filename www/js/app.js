@@ -806,6 +806,107 @@ function renderShows(){
       </div>
     </a>`).join('');
 }
+
+/* ── New content sections (stage 4) — all fed through DataService ──
+   Videos, Podcasts, Race Diary and Replays didn't exist in the UI before.
+   These placeholder sections read the same DATA snapshot every other
+   screen does, so flipping DATA_SOURCE to "api" swaps their data too. */
+
+/* Home · Videos — feature + interview clips (the Shows grid already
+   covers kind:'show'). Horizontal carousel of glass cards. */
+function renderVideos(){
+  const el=document.getElementById('videoList'); if(!el) return;
+  const vids=DATA.videos.filter(v=>v.kind!=='show');
+  if(!vids.length){ el.innerHTML=emptyMini('Videos are on their way'); return; }
+  el.innerHTML=vids.map(v=>`
+    <button class="tap text-left rounded-2xl overflow-hidden glass" style="width:230px" onclick="toast('▶ Opening ${(v.t||'').replace(/'/g,"\\'").slice(0,40)}…')">
+      <div class="relative aspect-video bg-navy-800">
+        <img src="${v.th}" alt="" loading="lazy" class="absolute inset-0 w-full h-full object-cover">
+        <span class="absolute inset-0" style="background:linear-gradient(180deg,rgba(4,12,31,0),rgba(4,12,31,.55))"></span>
+        <span class="absolute top-2 left-2 display-tight text-[8.5px] px-2 py-0.5 rounded-md ${v.kind==='feature'?'bg-rnswred text-white':'bg-sky-brand text-navy-950'}">${(v.kind||'').toUpperCase()}</span>
+        <span class="absolute inset-0 grid place-items-center">
+          <span class="w-11 h-11 rounded-full glass glass-strong glass-pill grid place-items-center"><svg width="15" height="15" viewBox="0 0 24 24" fill="white"><path d="M8 5v14l11-7z"/></svg></span>
+        </span>
+      </div>
+      <div class="p-3">
+        <div class="display-tight text-[12.5px] leading-tight text-white" style="display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${v.t}</div>
+        <div class="text-[10.5px] text-sky-soft mt-1">${v.ch}${v.when?` · ${v.when}`:''}</div>
+      </div>
+    </button>`).join('');
+}
+
+/* Home · Podcasts — show cards with the latest episode. */
+function renderPodcasts(){
+  const el=document.getElementById('podcastList'); if(!el) return;
+  if(!DATA.podcasts.length){ el.innerHTML=emptyMini('Podcasts are on their way'); return; }
+  el.innerHTML=DATA.podcasts.map(p=>`
+    <button class="tap w-full text-left glass rounded-[22px] p-4 flex items-center gap-4" onclick="toast('🎙️ Opening ${(p.name||'').replace(/'/g,"\\'")}…')">
+      <div class="w-14 h-14 rounded-2xl grid place-items-center text-2xl shrink-0" style="background:rgba(91,184,255,.16)">${p.icon}</div>
+      <div class="flex-1 min-w-0">
+        <div class="display-tight text-[15px] leading-tight truncate">${p.name}</div>
+        ${p.latest?`<div class="text-[12px] text-sky-soft mt-0.5 truncate">Latest: ${p.latest}</div>`:`<div class="text-[12px] text-sky-soft mt-0.5 truncate">${p.sub||''}</div>`}
+        <div class="text-[10.5px] text-sky-soft/80 mt-1">${[p.when,p.dur,p.episodes!=null?p.episodes+' eps':''].filter(Boolean).join(' · ')}</div>
+      </div>
+      <span class="w-9 h-9 rounded-full grid place-items-center shrink-0" style="background:rgba(232,19,46,.92)"><svg width="12" height="12" viewBox="0 0 24 24" fill="white"><path d="M8 5v14l11-7z"/></svg></span>
+    </button>`).join('');
+}
+
+/* Schedule · Race Diary — key dates, colour-coded by type. */
+const DIARY_STYLE = {
+  noms:    {label:'NOMS',    color:'#5BB8FF'},
+  weights: {label:'WEIGHTS', color:'#F2B33D'},
+  accept:  {label:'ACCEPT',  color:'#34D399'},
+  draw:    {label:'DRAW',    color:'#8FCBFF'},
+  ballot:  {label:'BALLOT',  color:'#E8132E'},
+};
+function renderDiary(){
+  const el=document.getElementById('diaryList'); if(!el) return;
+  if(!DATA.diary.length){ el.innerHTML=emptyMini('Diary dates are on their way'); return; }
+  el.innerHTML=DATA.diary.map(d=>{
+    const s=DIARY_STYLE[d.type]||{label:(d.type||'').toUpperCase(),color:'#A7CDEF'};
+    const dm=(d.date||'').split(' ').slice(0,2).join(' ');   // "28 Aug"
+    return `<div class="glass rounded-[20px] p-3.5 flex items-center gap-3.5">
+      <div class="w-12 shrink-0 text-center">
+        <div class="display text-[15px] leading-none text-white">${dm.split(' ')[0]||''}</div>
+        <div class="text-[10px] font-extrabold tracking-wider text-sky-soft mt-0.5">${(dm.split(' ')[1]||'').toUpperCase()}</div>
+      </div>
+      <div class="w-px self-stretch bg-white/10"></div>
+      <div class="flex-1 min-w-0">
+        <span class="inline-block display-tight text-[8.5px] px-2 py-0.5 rounded-md text-navy-950 mb-1" style="background:${s.color}">${s.label}</span>
+        <div class="font-bold text-[13.5px] truncate">${d.event}</div>
+        <div class="text-[11.5px] text-sky-soft truncate">${d.label} · ${d.venue}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+/* Results · Replays — horizontal carousel of feature-race replays. */
+function renderReplays(){
+  const el=document.getElementById('replayList'); if(!el) return;
+  if(!DATA.replays.length){ el.innerHTML=emptyMini('Replays are on their way'); return; }
+  el.innerHTML=DATA.replays.map(r=>`
+    <button class="tap text-left rounded-2xl overflow-hidden glass" style="width:230px" onclick="toast('▶ Replay — ${(r.race||'').replace(/'/g,"\\'")}…')">
+      <div class="relative aspect-video bg-navy-800">
+        <img src="${r.th}" alt="" loading="lazy" class="absolute inset-0 w-full h-full object-cover">
+        <span class="absolute inset-0" style="background:linear-gradient(180deg,rgba(4,12,31,0),rgba(4,12,31,.6))"></span>
+        <span class="absolute top-2 left-2">${gradeBadge(r.cls)}</span>
+        <span class="absolute bottom-2 right-2 display-tight text-[9px] px-1.5 py-0.5 rounded bg-black/60 text-white">${r.dur}</span>
+        <span class="absolute inset-0 grid place-items-center">
+          <span class="w-11 h-11 rounded-full grid place-items-center" style="background:rgba(232,19,46,.92)"><svg width="15" height="15" viewBox="0 0 24 24" fill="white"><path d="M8 5v14l11-7z"/></svg></span>
+        </span>
+      </div>
+      <div class="p-3">
+        <div class="display-tight text-[13px] leading-tight truncate">${r.race}</div>
+        <div class="text-[11px] text-sky-soft mt-0.5 truncate">🏆 ${r.winner} · ${r.date}</div>
+      </div>
+    </button>`).join('');
+}
+
+/* Small inline empty-state for the horizontal/list sections. */
+function emptyMini(msg){
+  return `<div class="glass rounded-[20px] px-4 py-6 text-center text-sky-soft text-[13px]">${msg}</div>`;
+}
+
 function toggleFeatSound(btn){ const v=document.getElementById('featVid'); if(!v) return; v.muted=!v.muted; btn.innerHTML=v.muted?'&#128263;':'&#128266;'; if(!v.muted){ v.play&&v.play(); } }
 function newsTab(which){
   document.getElementById('newsStories').classList.toggle('hidden', which!=='latest');
@@ -1281,6 +1382,10 @@ function renderAll(){
   renderActivations();
   renderStories();
   renderShows();
+  renderVideos();         // stage 4 — Home videos carousel
+  renderPodcasts();       // stage 4 — Home podcasts
+  renderDiary();          // stage 4 — Schedule race diary
+  renderReplays();        // stage 4 — Results replays carousel
   renderLiveFeed();       // 3.4 — pre-build Race-Day Mode feeds
   renderTodayFeed();
   renderPastRounds();     // 3.3 — fantasy points history

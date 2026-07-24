@@ -208,6 +208,24 @@
             <div id="showsGrid" class="grid grid-cols-2 gap-3"></div>
           </div>
         </div><!-- /#newsFeed -->
+
+        <!-- ── Videos (fed by DataService.getVideos) ── -->
+        <section class="mt-7">
+          <div class="flex items-center justify-between mb-3">
+            <h2 class="display text-[17px]">Videos</h2>
+            <span class="text-[10px] font-extrabold tracking-[.18em] text-sky-soft" id="videoUpdated"></span>
+          </div>
+          <div id="videoList" class="carousel"></div>
+        </section>
+
+        <!-- ── Podcasts (fed by DataService.getPodcasts) ── -->
+        <section class="mt-7">
+          <div class="flex items-center justify-between mb-3">
+            <h2 class="display text-[17px]">Podcasts</h2>
+            <span class="text-[10px] font-extrabold tracking-[.18em] text-sky-soft">RACING NSW</span>
+          </div>
+          <div id="podcastList" class="space-y-3"></div>
+        </section>
       </main>
 
       <!-- ════════════ SCHEDULE ════════════ -->
@@ -222,6 +240,15 @@
           <button id="sec-sched-country" onclick="setSchedSector('country')">Country</button>
         </div>
         <div id="scheduleList" class="space-y-3"></div>
+
+        <!-- ── Race Diary (fed by DataService.getRaceDiary) ── -->
+        <section class="mt-7">
+          <div class="flex items-center gap-2.5 mb-1">
+            <h2 class="display text-[17px]">Race Diary</h2>
+          </div>
+          <p class="text-sky-soft text-[12.5px] mb-3">Key dates — nominations, weights, barrier draws &amp; ballots.</p>
+          <div id="diaryList" class="space-y-2.5"></div>
+        </section>
       </main>
 
       <!-- ════════════ RESULTS ════════════ -->
@@ -241,6 +268,15 @@
           <button class="tap glass glass-pill px-5 py-2.5 text-[12.5px] font-bold text-sky-soft" onclick="sortResults('venue')">By track</button>
         </div>
         <div id="resultsList" class="space-y-3"></div>
+
+        <!-- ── Race Replays (fed by DataService.getRaceReplays) ── -->
+        <section class="mt-7">
+          <div class="flex items-center justify-between mb-3">
+            <h2 class="display text-[17px]">Replays</h2>
+            <span class="text-[10px] font-extrabold tracking-[.18em] text-sky-soft" id="replayUpdated"></span>
+          </div>
+          <div id="replayList" class="carousel"></div>
+        </section>
       </main>
 
       <!-- ════════════ FANTASY (all fantasy lives here) ════════════ -->

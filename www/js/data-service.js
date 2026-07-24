@@ -347,6 +347,8 @@
       host:'Racing NSW', latest:'Spring preview — Everest barrier draw', when:'22 Jul', dur:'38:12', episodes:112 },
     { id:'pod2', icon:'🎧', name:'Randwick to Riverina',   sub:'Country & provincial deep dives',
       host:'Racing NSW Country', latest:'Kosciuszko slot holders revealed', when:'19 Jul', dur:'27:45', episodes:64 },
+    { id:'pod3', icon:'🏆', name:'It’s Gold', sub:'Long-form interviews from the stable floor',
+      host:'Racing NSW', latest:'#007 — Mulberry Racing’s data revolution', when:'15 Jul', dur:'22:24', episodes:7 },
   ];
 
   /* Tickets & passes */
