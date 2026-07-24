@@ -347,6 +347,25 @@ body{ height:100vh; height:100dvh; }
 #appScroll.hc .text-sky-soft{ color:#cfe3fb !important; }
 body.rm-on *{ animation-duration:.01ms !important; transition-duration:.01ms !important; }
 
+/* ── Stage 5: loading skeletons ──
+   Shown while a domain is being fetched (api mode). The service always
+   resolves with fallback data, so a skeleton is only ever replaced by
+   content — never left hanging, never a blank screen. */
+.skeleton{ position:relative; overflow:hidden; background:rgba(255,255,255,.055);
+  border:1px solid rgba(255,255,255,.06); border-radius:20px; }
+.skeleton::after{ content:""; position:absolute; inset:0; transform:translateX(-100%);
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.09),transparent);
+  animation:shimmer 1.35s infinite; }
+@keyframes shimmer{ 100%{ transform:translateX(100%); } }
+.sk-row{ margin-bottom:12px; }
+.sk-chip{ display:inline-block; width:230px; margin-right:12px; vertical-align:top; }
+/* Reduced-motion + prefers-reduced-motion: keep the placeholder, drop the sweep. */
+body.rm-on .skeleton::after{ animation:none; }
+@media (prefers-reduced-motion:reduce){ .skeleton::after{ animation:none; } }
+/* Subtle "last updated" freshness text; the .stale variant marks fallback data. */
+.freshness{ font-size:10px; font-weight:700; letter-spacing:.02em; color:#A7CDEF; opacity:.75; }
+.freshness.stale{ color:#F2B33D; }
+
 /* ── V5: primary action button (single source for the brand CTA) ── */
 .btn-primary{ border-radius:16px; color:#040C1F; font-weight:800;
   background:linear-gradient(180deg,#8FCBFF,#5BB8FF);

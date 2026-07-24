@@ -135,6 +135,7 @@
         <div class="flex items-center gap-2.5 mb-3">
           <span class="pulse"></span>
           <h2 class="display text-[19px]">Race Day</h2>
+          <span id="raceDayUpdated" class="freshness ml-auto"></span>
         </div>
         <div class="seg glass glass-pill grid-cols-3 mb-4" role="tablist" aria-label="Race-day view">
           <button id="rd-live" onclick="setRaceDayMode('live')">Live</button>
@@ -253,7 +254,10 @@
 
       <!-- ════════════ RESULTS ════════════ -->
       <main id="view-results" class="view relative z-10 px-4 pt-3 pb-36">
-        <h2 class="display text-[19px] mb-0.5">Results</h2>
+        <div class="flex items-baseline justify-between">
+          <h2 class="display text-[19px] mb-0.5">Results</h2>
+          <span id="resultsUpdated" class="freshness"></span>
+        </div>
         <p class="text-sky-soft text-[12.5px] mb-3">Outcomes, full fields &amp; form.</p>
         <!-- SECTOR FILTER -->
         <div class="seg glass glass-pill grid-cols-4 mb-3" role="tablist" aria-label="Sector filter">

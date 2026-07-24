@@ -118,6 +118,7 @@ function loadDomain(key, call, apply, repaint){
 /* Boot-time load of every domain the app renders. */
 function loadAppData(){
   const S = window.DataService;
+  showLoading();   // paint skeletons up front; replaced when data settles
   return Promise.all([
     loadDomain('raceDays', ()=>S.getRaceDays(), d=>{ DATA.raceDays=d||[]; }),
     loadDomain('results',  ()=>S.getResults(),  d=>{ DATA.results=d||[]; }),
@@ -907,6 +908,52 @@ function emptyMini(msg){
   return `<div class="glass rounded-[20px] px-4 py-6 text-center text-sky-soft text-[13px]">${msg}</div>`;
 }
 
+/* ── Stage 5 · loading skeletons ───────────────────────────────
+   Painted before data arrives (matters in api mode over a slow race-day
+   connection). DataService always resolves with fallback data, so a
+   skeleton is only ever replaced by content — the screen never stays
+   blank and never hangs on a spinner. */
+function skRows(n, h){
+  let s=''; for(let i=0;i<n;i++) s+=`<div class="skeleton sk-row" style="height:${h||88}px"></div>`;
+  return s;
+}
+function skChips(n, h){
+  let s=''; for(let i=0;i<n;i++) s+=`<div class="skeleton sk-chip" style="height:${h||150}px"></div>`;
+  return s;
+}
+function showLoading(){
+  // Only fill a container that's still empty, so this is safe to call again
+  // and never clobbers content that has already rendered.
+  const set=(id,html)=>{ const el=document.getElementById(id); if(el && !el.innerHTML.trim()) el.innerHTML=html; };
+  set('scheduleList', skRows(4,120));
+  set('resultsList',  skRows(4,96));
+  set('storyList',    skRows(3,64));
+  set('videoList',    skChips(3));
+  set('podcastList',  skRows(3,84));
+  set('diaryList',    skRows(4,70));
+  set('replayList',   skChips(3));
+  set('rosterList',   skRows(4,84));
+  set('pastRounds',   skRows(3,74));
+}
+
+/* ── Stage 5 · "last updated" freshness ────────────────────────
+   Reads META (stamped by loadDomain) through DataService.formatUpdated.
+   Fallback/stale data is marked amber and labelled "cached" so degraded
+   race-day content is honestly signalled, not passed off as live. */
+function setFresh(id, key){
+  const el=document.getElementById(id); if(!el) return;
+  const m=META[key];
+  if(!m || !m.fetchedAt){ el.textContent=''; el.classList.remove('stale'); return; }
+  el.textContent = window.DataService.formatUpdated(m.fetchedAt) + (m.stale ? ' · cached' : '');
+  el.classList.toggle('stale', !!m.stale);
+}
+function renderFreshness(){
+  setFresh('resultsUpdated','results');   // results — freshness matters most
+  setFresh('raceDayUpdated','liveFeed');  // live race-day info
+  setFresh('videoUpdated','videos');
+  setFresh('replayUpdated','replays');
+}
+
 function toggleFeatSound(btn){ const v=document.getElementById('featVid'); if(!v) return; v.muted=!v.muted; btn.innerHTML=v.muted?'&#128263;':'&#128266;'; if(!v.muted){ v.play&&v.play(); } }
 function newsTab(which){
   document.getElementById('newsStories').classList.toggle('hidden', which!=='latest');
@@ -1390,6 +1437,7 @@ function renderAll(){
   renderTodayFeed();
   renderPastRounds();     // 3.3 — fantasy points history
   render();               // budget, grid, roster, cap alert (reflects restored picks)
+  renderFreshness();      // stage 5 — "last updated" indicators
   layoutSticky();
 }
 
