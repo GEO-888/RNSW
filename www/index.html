@@ -47,6 +47,13 @@
 
 <script src="js/tailwind.config.js"></script>
 
+<!-- Data layer. Order matters: config defines the switches, data-service
+     reads them, app.js consumes the service. All three are plain globals
+     (no bundler in this build) and all paths are relative so they resolve
+     inside the native Capacitor WebView. -->
+<script src="js/config.js"></script>
+<script src="js/data-service.js"></script>
+
 <link rel="stylesheet" href="css/app.css">
 <!-- Debug: ?insets=1 simulates device safe-areas (Dynamic Island + home indicator) -->
 <script>if(location.search.indexOf('insets')>-1)document.documentElement.classList.add('demo-insets');</script>
