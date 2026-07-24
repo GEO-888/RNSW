@@ -17,6 +17,7 @@ const SQUAD = { jockey:5, trainer:2 };
 /* Headline feature for a schedule card. Render helper — reads a race day
    supplied by the service; prizeNum() comes from data-service.js. */
 function schedFeat(r){
+  const prizeNum = window.DataService.prizeNum;
   const fs=(r.feats&&r.feats.length)?r.feats:(r.feat?[r.feat]:[]); if(!fs.length) return '';
   const hf=fs.reduce((a,b)=>prizeNum(b.prize)>prizeNum(a.prize)?b:a);
   const more=fs.length>1?` <span class="text-sky-soft font-semibold">+${fs.length-1} more</span>`:'';
@@ -71,8 +72,81 @@ function trendArrow(t){
 /* ╔══════════════════════════════════════════════════════════════╗
    ║ SECTION 3 · APP STATE & SELECTORS                            ║
    ╚══════════════════════════════════════════════════════════════╝ */
+
+/* ── The view's copy of the data ───────────────────────────────
+   Screens render synchronously off DATA; DataService fills it. Keeping
+   a resolved snapshot here (rather than awaiting inside every render
+   function) means the render code stays synchronous and unchanged in
+   shape, and a re-render triggered by a filter tap never has to wait
+   on the network.
+
+   Everything starts empty. A render that runs before its domain has
+   loaded produces an empty list, not a crash — which is exactly the
+   loading state stage 5 will dress up. */
+const DATA = {
+  raceDays:[], results:[], players:[],
+  /* Horses are not preloaded: searchHorses()/getHorseProfile() resolve
+     per-lookup so an api-mode search hits the server, not a stale copy. */
+  jockeyProfiles:{}, trainerProfiles:{},
+  liveFeed:[], leaderboard:[], myLeague:[], myRank:null, pastRounds:[],
+  sites:[], socials:[], podcasts:[], activations:[], tickets:[], alertOpts:{},
+  newsHub:'', stories:[], videos:[], replays:[], diary:[], events:[],
+  mapCats:{}, mapPins:[],
+};
+
+/* Freshness per domain, keyed as in DATA: {fetchedAt, stale, source, error}.
+   Stage 5 reads this for the "last updated" indicators. */
+const META = {};
+function noteMeta(key, env){
+  META[key] = { fetchedAt:env.fetchedAt, stale:env.stale, source:env.source, error:env.error };
+  return env.data;
+}
+
+/* Pull one domain into DATA, then repaint whatever depends on it. Each
+   is independent, so a slow or failing domain never blocks the others. */
+function loadDomain(key, call, apply, repaint){
+  return call().then(env=>{
+    apply(noteMeta(key, env));
+    if(repaint) repaint();
+  }).catch(e=>{
+    // DataService is contracted never to reject; belt-and-braces so one
+    // bad domain can't abort the boot chain.
+    META[key] = { fetchedAt:null, stale:true, source:'none', error:String(e&&e.message||e) };
+  });
+}
+
+/* Boot-time load of every domain the app renders. */
+function loadAppData(){
+  const S = window.DataService;
+  return Promise.all([
+    loadDomain('raceDays', ()=>S.getRaceDays(), d=>{ DATA.raceDays=d||[]; }),
+    loadDomain('results',  ()=>S.getResults(),  d=>{ DATA.results=d||[]; }),
+    loadDomain('jockeys',  ()=>S.getJockeys(),  d=>{ DATA.jockeyProfiles=(d&&d.profiles)||{}; DATA._jockeys=(d&&d.roster)||[]; }),
+    loadDomain('trainers', ()=>S.getTrainers(), d=>{ DATA.trainerProfiles=(d&&d.profiles)||{}; DATA._trainers=(d&&d.roster)||[]; }),
+    loadDomain('liveFeed', ()=>S.getLiveFeed(), d=>{ DATA.liveFeed=d||[]; }),
+    loadDomain('leaderboard', ()=>S.getLeaderboard(), d=>{
+      DATA.leaderboard=(d&&d.global)||[]; DATA.myLeague=(d&&d.league)||[]; DATA.myRank=(d&&d.me)||null; }),
+    loadDomain('pastRounds', ()=>S.getPastRounds(), d=>{ DATA.pastRounds=d||[]; }),
+    loadDomain('network',  ()=>S.getNetwork(),  d=>{
+      DATA.sites=(d&&d.sites)||[]; DATA.socials=(d&&d.socials)||[]; DATA.podcasts=(d&&d.podcasts)||[]; }),
+    loadDomain('activations', ()=>S.getActivations(), d=>{ DATA.activations=d||[]; }),
+    loadDomain('tickets',  ()=>S.getTickets(),  d=>{ DATA.tickets=d||[]; }),
+    loadDomain('alertOpts',()=>S.getAlertOptions(), d=>{ DATA.alertOpts=d||{}; }),
+    loadDomain('news',     ()=>S.getNews(),     d=>{ DATA.newsHub=(d&&d.hub)||''; DATA.stories=(d&&d.stories)||[]; }),
+    loadDomain('videos',   ()=>S.getVideos(),   d=>{ DATA.videos=d||[]; }),
+    loadDomain('replays',  ()=>S.getRaceReplays(), d=>{ DATA.replays=d||[]; }),
+    loadDomain('diary',    ()=>S.getRaceDiary(), d=>{ DATA.diary=d||[]; }),
+    loadDomain('events',   ()=>S.getUpcomingEvents(), d=>{ DATA.events=d||[]; }),
+    loadDomain('courseMap',()=>S.getCourseMap(), d=>{
+      DATA.mapCats=(d&&d.cats)||{}; DATA.mapPins=(d&&d.pins)||[]; }),
+  ]).then(()=>{
+    // Fantasy roster is jockeys + trainers, in that order (drives Market order).
+    DATA.players = (DATA._jockeys||[]).concat(DATA._trainers||[]);
+  });
+}
+
 const state = { picks:[], captainId:null, market:'jockey', schedSector:'all', resSector:'all' };
-const byId  = id => PLAYERS.find(p=>p.id===id);
+const byId  = id => DATA.players.find(p=>p.id===id);
 const spent = () => state.picks.reduce((s,id)=>s+byId(id).price,0);
 const remaining = () => SALARY_CAP - spent();
 const countRole = r => state.picks.filter(id=>byId(id).role===r).length;
@@ -140,7 +214,7 @@ function renderGrid(){
 }
 
 function renderRoster(){
-  const list=PLAYERS.filter(p=>p.role===state.market);
+  const list=DATA.players.filter(p=>p.role===state.market);
   document.getElementById('rosterList').innerHTML=list.map(p=>{
     const picked=state.picks.includes(p.id);
     const full=!picked && countRole(p.role)>=SQUAD[p.role];
@@ -187,7 +261,7 @@ function setRaceDayMode(m){
   if(m==='today') renderTodayFeed();
 }
 function renderLiveFeed(){
-  document.getElementById('liveFeed').innerHTML=LIVE_FEED.map(f=>{
+  document.getElementById('liveFeed').innerHTML=DATA.liveFeed.map(f=>{
     const badge = f.state==='live'
       ? '<span class="flex items-center gap-1.5 bg-rnswred text-white display-tight text-[9.5px] px-2 py-1 rounded-md"><span class="pulse" style="width:6px;height:6px"></span> LIVE</span>'
       : f.state==='result'
@@ -203,7 +277,7 @@ function renderLiveFeed(){
 }
 function renderTodayFeed(){
   // Today = the Golden Slipper Day programme (feature meeting)
-  const d=RACE_DAYS.find(x=>x.day==='TAB Everest Day') || RACE_DAYS[0];
+  const d=DATA.raceDays.find(x=>x.day==='TAB Everest Day') || DATA.raceDays[0];
   document.getElementById('todayFeed').innerHTML=`
     <article class="glass rounded-[22px] p-4 mb-1">
       <div class="text-[9.5px] font-extrabold tracking-[.2em] text-sky-soft">TODAY · ${d.venue}</div>
@@ -239,7 +313,7 @@ function setBoardTab(t){
 function renderBoard(){
   const el=document.getElementById('boardList');
   if(boardTab==='global'){
-    el.innerHTML=LEADERBOARD.map(r=>`
+    el.innerHTML=DATA.leaderboard.map(r=>`
       <div class="glass rounded-2xl px-3.5 py-3 flex items-center gap-3">
         <div class="w-7 text-center display text-[15px] ${r.rank<=3?'text-gold':'text-sky-soft'}">${r.rank}</div>
         <div class="w-9 h-9 rounded-full bg-white/10 display grid place-items-center text-[11px] text-sky-brand shrink-0">${initialsOf(r.name)}</div>
@@ -255,7 +329,7 @@ function renderBoard(){
           <div class="display text-[15px] text-gold">1,284</div>
         </div>`;
   } else {
-    el.innerHTML=MY_LEAGUE.map(r=>`
+    el.innerHTML=DATA.myLeague.map(r=>`
       <div class="glass rounded-2xl px-3.5 py-3 flex items-center gap-3 ${r.you?'':''}" style="${r.you?'border-color:rgba(91,184,255,.7)':''}">
         <div class="w-7 text-center display text-[15px] ${r.rank<=3?'text-gold':'text-sky-soft'}">${r.rank}</div>
         <div class="w-9 h-9 rounded-full display grid place-items-center text-[11px] shrink-0 ${r.you?'text-navy-950':'bg-white/10 text-sky-brand'}" style="${r.you?'background:linear-gradient(180deg,#8FCBFF,#5BB8FF)':''}">${r.you?initialsOf(getUserName()):initialsOf(r.name)}</div>
@@ -267,7 +341,7 @@ function renderBoard(){
 
 /* ── 3.3 Past Rounds accordion ── */
 function renderPastRounds(){
-  document.getElementById('pastRounds').innerHTML=PAST_ROUNDS.map((r,i)=>`
+  document.getElementById('pastRounds').innerHTML=DATA.pastRounds.map((r,i)=>`
     <div class="glass rounded-[24px] overflow-hidden">
       <button class="tap w-full px-4 py-4 flex items-center justify-between" onclick="togglePastRound(${i})" aria-expanded="false">
         <div class="text-left"><div class="display-tight text-[14px]">${r.round}</div>
@@ -361,11 +435,11 @@ const SECTOR_LABEL = { metro:'METRO', prov:'PROVINCIAL', country:'COUNTRY' };
 function setSchedSector(s){
   state.schedSector=s;
   ['all','metro','prov','country'].forEach(k=>document.getElementById('sec-sched-'+k).classList.toggle('on',k===s));
-  const rows=RACE_DAYS.filter(r=>s==='all'||r.sector===s);
+  const rows=DATA.raceDays.filter(r=>s==='all'||r.sector===s);
   const listEl=document.getElementById('scheduleList');
   if(rows.length===0){ listEl.innerHTML=emptyState('No meetings this sector'); return; }
   listEl.innerHTML=rows.map((r)=>`
-    <article class="glass rounded-[24px] p-4 flex items-start justify-between gap-3 cursor-pointer active:scale-[.99] transition" onclick="openProgramme(${RACE_DAYS.indexOf(r)})" role="button" aria-label="Open ${r.venue} programme">
+    <article class="glass rounded-[24px] p-4 flex items-start justify-between gap-3 cursor-pointer active:scale-[.99] transition" onclick="openProgramme(${DATA.raceDays.indexOf(r)})" role="button" aria-label="Open ${r.venue} programme">
       <div class="min-w-0">
         <div class="text-[9.5px] font-extrabold tracking-[.22em] text-sky-soft">${SECTOR_LABEL[r.sector]}</div>
         <h3 class="display-tight text-[17px] leading-tight mt-0.5">${r.venue}</h3>
@@ -394,17 +468,17 @@ function setResSector(s){
   renderResults();
 }
 function sortResults(key){
-  if(key==='cls') RESULTS.sort((a,b)=>a.cls.localeCompare(b.cls));
-  if(key==='venue') RESULTS.sort((a,b)=>a.venue.localeCompare(b.venue));
-  if(key==='date') RESULTS.sort((a,b)=>new Date(b.date)-new Date(a.date));
+  if(key==='cls') DATA.results.sort((a,b)=>a.cls.localeCompare(b.cls));
+  if(key==='venue') DATA.results.sort((a,b)=>a.venue.localeCompare(b.venue));
+  if(key==='date') DATA.results.sort((a,b)=>new Date(b.date)-new Date(a.date));
   renderResults();
 }
 function renderResults(){
-  const rows=RESULTS.filter(r=>state.resSector==='all'||r.sector===state.resSector);
+  const rows=DATA.results.filter(r=>state.resSector==='all'||r.sector===state.resSector);
   const listEl=document.getElementById('resultsList');
   if(rows.length===0){ listEl.innerHTML=emptyState('No results this sector'); return; }
   listEl.innerHTML=rows.map((r)=>{
-    const idx=RESULTS.indexOf(r);
+    const idx=DATA.results.indexOf(r);
     const field=(r.runners||[]).map(rw=>`
       <div class="flex items-center gap-2 text-[11.5px] py-1 border-b border-white/5 last:border-0">
         <span class="w-7 font-extrabold ${rw[0]==='1st'?'text-gold':'text-sky-soft'}">${rw[0]}</span>
@@ -452,15 +526,22 @@ function toggleResult(idx){
   const open=exp.classList.toggle('open'); chev.classList.toggle('open',open);
 }
 
-/* Universal Horse Search → profile cards (1.2) */
-function runSearch(q){
+/* Universal Horse Search → profile cards (1.2)
+   Horse matching goes through the service (server-side in api mode);
+   jockey/trainer name matching runs against the already-loaded profile
+   maps. A stale in-flight response can't overwrite a newer one — see
+   searchSeq. */
+let searchSeq = 0;
+async function runSearch(q){
   const box=document.getElementById('searchResults');
   q=q.trim().toLowerCase();
   if(!q){ box.classList.add('hidden'); return; }
-  const hHits=HORSES.filter(h=>h.name.toLowerCase().includes(q)
-      || (h.trainer||'').toLowerCase().includes(q) || (h.jockey||'').toLowerCase().includes(q));
-  const jHits=Object.keys(JOCKEY_PROFILES).filter(n=>n.toLowerCase().includes(q)).map(n=>({type:'jockey',name:n}));
-  const tHits=Object.keys(TRAINER_PROFILES).filter(n=>n.toLowerCase().includes(q)).map(n=>({type:'trainer',name:n}));
+  const seq = ++searchSeq;
+  const env = await window.DataService.searchHorses(q);
+  if(seq !== searchSeq) return;            // a later keystroke already won
+  const hHits=env.data||[];
+  const jHits=Object.keys(DATA.jockeyProfiles).filter(n=>n.toLowerCase().includes(q)).map(n=>({type:'jockey',name:n}));
+  const tHits=Object.keys(DATA.trainerProfiles).filter(n=>n.toLowerCase().includes(q)).map(n=>({type:'trainer',name:n}));
   const hits=[...hHits, ...jHits, ...tHits].slice(0,6);
   box.innerHTML=hits.length?hits.map(x=>{
     const icon=x.type==='horse'?'🐎':x.type==='jockey'?'🧑‍🦱':'📋';
@@ -475,10 +556,10 @@ function runSearch(q){
 }
 
 /* Build + open a profile card by (type,name) (1.2) */
-function openProfile(type,name){
+async function openProfile(type,name){
   let body='';
   if(type==='horse'){
-    const x=HORSES.find(h=>h.name===name); if(!x) return;
+    const x=(await window.DataService.getHorseProfile(name)).data; if(!x) return;
     const pills=(x.last5||[]).map(p=>`<span class="pill pill-${p<=3?p:'u'}">${p<=3?p:'•'}</span>`).join('');
     body=`
       <div class="text-[12px] text-sky-soft mb-3">${x.cs}</div>
@@ -492,7 +573,7 @@ function openProfile(type,name){
       <div class="flex gap-1.5 mb-4">${pills}</div>
       <div class="glass rounded-2xl p-3 text-[12.5px] font-semibold">🏆 ${x.note}</div>`;
   } else {
-    const P=(type==='jockey'?JOCKEY_PROFILES:TRAINER_PROFILES)[name]; if(!P) return;
+    const P=(type==='jockey'?DATA.jockeyProfiles:DATA.trainerProfiles)[name]; if(!P) return;
     const unit=type==='jockey'?'rides':'runners';
     const recent=(P.recent||[]).map(r=>`
       <div class="flex items-center gap-2 py-2 border-b border-white/5 last:border-0">
@@ -520,10 +601,11 @@ function openProfile(type,name){
   fb.dataset.name=name; fb.setAttribute('aria-pressed','false'); fb.textContent='+ Follow';
   openGenericSheet('profileSheetWrap');
 }
-function openProfileByName(name){
-  if(HORSES.find(h=>h.name===name)) return openProfile('horse',name);
-  if(JOCKEY_PROFILES[name]) return openProfile('jockey',name);
-  if(TRAINER_PROFILES[name]) return openProfile('trainer',name);
+async function openProfileByName(name){
+  if(DATA.jockeyProfiles[name]) return openProfile('jockey',name);
+  if(DATA.trainerProfiles[name]) return openProfile('trainer',name);
+  const horse=(await window.DataService.getHorseProfile(name)).data;
+  if(horse) return openProfile('horse',name);
   toast('Full form for '+name+' is on its way');
 }
 function toggleFollow(btn){
@@ -535,7 +617,7 @@ function toggleFollow(btn){
 
 /* Race programme drill-in (1.4) */
 function openProgramme(dayIdx){
-  const d=RACE_DAYS[dayIdx]; if(!d) return;
+  const d=DATA.raceDays[dayIdx]; if(!d) return;
   document.getElementById('progTitle').textContent='Race Programme — '+d.venue;
   document.getElementById('progSub').innerHTML=`${SECTOR_LABEL[d.sector]} · ${d.date} &nbsp;${condBadge(d.condition)}`;
   document.getElementById('progBody').innerHTML=d.races.map(rc=>`
@@ -569,13 +651,8 @@ function qrGrid(seed){
   let cells=''; for(let i=0;i<121;i++) cells+=`<i class="${rnd()>0.5?'on':''}"></i>`;
   return `<div class="qr">${cells}</div>`;
 }
-const TICKETS=[
-  { ev:'Golden Slipper Day', date:'Sat 21 Mar 2026', venue:'Rosehill Gardens', gate:'Gate B · The Theatre', seed:137 },
-  { ev:'The Star Championships Day 1', date:'Sat 4 Apr 2026', venue:'Royal Randwick', gate:'Gate 5 · Grandstand', seed:911 },
-  { ev:'All Aged Stakes Day', date:'Sat 18 Apr 2026', venue:'Royal Randwick', gate:'Gate 1 · Member Lawn', seed:455 },
-];
 function openTickets(){
-  document.getElementById('ticketsBody').innerHTML=TICKETS.map(t=>`
+  document.getElementById('ticketsBody').innerHTML=DATA.tickets.map(t=>`
     <div class="glass rounded-[22px] p-4 mb-3 flex gap-4 items-center">
       <div class="flex-1 min-w-0">
         <div class="display-tight text-[15px] leading-tight">${t.ev}</div>
@@ -593,11 +670,6 @@ function openTickets(){
 }
 
 /* ── 1.1 Race alerts sheet ── */
-const ALERT_OPTS={
-  horses:['Black Caviar','Winx','Nature Strip','Anamoe'],
-  jockeys:['James McDonald','Kerrin McEvoy','Tommy Berry','Rachel King'],
-  tracks:['Royal Randwick','Rosehill Gardens','Warwick Farm','Canterbury Park'],
-};
 const alertState={ horses:{}, jockeys:{}, tracks:{} };
 let alertTab='horses';
 function setAlertTab(t){
@@ -606,7 +678,7 @@ function setAlertTab(t){
   renderAlerts();
 }
 function renderAlerts(){
-  document.getElementById('alertsBody').innerHTML=ALERT_OPTS[alertTab].map((name)=>{
+  document.getElementById('alertsBody').innerHTML=(DATA.alertOpts[alertTab]||[]).map((name)=>{
     const on=!!alertState[alertTab][name];
     return `<div class="glass rounded-2xl px-4 py-4 mb-2.5 flex items-center justify-between">
       <span class="font-bold text-[14px]">${name}</span>
@@ -650,17 +722,17 @@ function setMarket(m){
 
 /* MENU builders */
 function buildMenu(){
-  document.getElementById('siteLinks').innerHTML=SITES.map(s=>`
+  document.getElementById('siteLinks').innerHTML=DATA.sites.map(s=>`
     <a class="tap glass rounded-2xl px-4 py-4 flex items-center gap-3" href="${s.url}" target="_blank" rel="noopener">
       <span class="text-xl">${s.icon}</span>
       <span class="flex-1 min-w-0"><span class="block font-bold text-[14.5px]">${s.name}</span>
       <span class="block text-[11.5px] text-sky-soft">${s.sub}</span></span>
       <span class="text-sky-brand text-lg">↗</span></a>`).join('');
-  document.getElementById('socialLinks').innerHTML=SOCIALS.map(s=>`
+  document.getElementById('socialLinks').innerHTML=DATA.socials.map(s=>`
     <a class="tap glass rounded-2xl py-3.5 grid place-items-center" href="${s.url}" target="_blank" rel="noopener" aria-label="${s.name}">
       <span class="display text-[13px] text-sky-brand">${s.label}</span>
       <span class="text-[9px] font-bold text-sky-soft mt-0.5">${s.name}</span></a>`).join('');
-  document.getElementById('podLinks').innerHTML=PODS.map(p=>`
+  document.getElementById('podLinks').innerHTML=DATA.podcasts.map(p=>`
     <button class="tap w-full glass rounded-2xl px-4 py-4 flex items-center gap-3 text-left" onclick="toast('🎙️ Opening ${p.name}…')">
       <span class="text-xl">${p.icon}</span>
       <span class="flex-1"><span class="block font-bold text-[14.5px]">${p.name}</span>
@@ -670,7 +742,7 @@ function buildMenu(){
 
 /* ── Activations tab (on-course experiences) ── */
 function renderActivations(){
-  document.getElementById('activationList').innerHTML = ACTIVATIONS.map(a=>{
+  document.getElementById('activationList').innerHTML = DATA.activations.map(a=>{
     const gold = !!a.flagship;
     const act  = a.app ? 'openGoldenMingle()' : `openActivationInfo('${a.id}')`;
     return `<button class="tap w-full text-left text-white glass ${gold?'glass-strong':''} rounded-[24px] p-4 flex items-center gap-4"
@@ -688,7 +760,7 @@ function renderActivations(){
   }).join('');
 }
 function openActivationInfo(id){
-  const a = ACTIVATIONS.find(x=>x.id===id); if(!a) return;
+  const a = DATA.activations.find(x=>x.id===id); if(!a) return;
   document.getElementById('actIcon').textContent  = a.icon;
   document.getElementById('actTitle').textContent = a.name;
   document.getElementById('actWhere').textContent = a.where;
@@ -707,30 +779,10 @@ function gmPhase(p){
 }
 
 /* ── Home · News (real Racing NSW stories) + Shows (YouTube) ── */
-const NEWS_HUB='https://www.racingnsw.com.au/media-news-premierships/latest-news/';
-const STORIES=[
-  {t:'Litt chasing more city success with ex-Godolphin recruits', tag:'STABLES',  when:'16 Jun'},
-  {t:'O\u2019Rourke keen to see signs of Predation\u2019s potential', tag:'FORM',    when:'16 Jun'},
-  {t:'Punter\u2019s Intelligence wrap \u2014 Rosehill', tag:'ANALYSIS',              when:'16 Jun'},
-  {t:'Sydney\u2019s \u2018Strapper of the Year\u2019 \u2014 nominations open', tag:'INDUSTRY', when:'22 Jun'},
-  {t:'Neil Evans\u2019 tips & preview for Goulburn', tag:'TIPS',                    when:'21 Jun'},
-];
-const SHOW_THUMB={a1:'assets/show-a1.jpg',a2:'assets/show-a2.jpg',a3:'assets/show-a3.jpg',b1:'assets/show-b1.jpg',b2:'assets/show-b2.jpg',b3:'assets/show-b3.jpg',b4:'assets/show-b4.jpg',b5:'assets/show-b5.jpg',b6:'assets/show-b6.jpg'};
-const SHOWS=[
-  {th:SHOW_THUMB.a1, t:'#007 — Changing the racing game: Mulberry Racing\'s data-driven revolution', ch:'It\'s Gold · 22:24'},
-  {th:SHOW_THUMB.a2, t:'The Inside Scoop on the Australian Racing Forensic Laboratory', ch:'Racing NSW · 5:13'},
-  {th:SHOW_THUMB.a3, t:'#006 — From arena to airwaves: Yvonne O\'Keefe joins It\'s Gold', ch:'It\'s Gold · 25:52'},
-  {th:SHOW_THUMB.b1, t:'#005 — Grit, glory and a cheeky edge: Tommy Berry Unfiltered', ch:'It\'s Gold · 23:55'},
-  {th:SHOW_THUMB.b2, t:'#003 — 5 Minutes with Brett Gilding', ch:'It\'s Gold · 5:09'},
-  {th:SHOW_THUMB.b3, t:'#004 — Selling Once, Selling Twice, SOLD! Brett Gilding', ch:'It\'s Gold · 25:32'},
-  {th:SHOW_THUMB.b4, t:'#003 — Meet the trainer born to race — Adrian Bott', ch:'It\'s Gold · 25:51'},
-  {th:SHOW_THUMB.b5, t:'#002 — 5 Minutes with Tom Mclackland', ch:'It\'s Gold · 5:22'},
-  {th:SHOW_THUMB.b6, t:'#002 — Meet the farrier breaking the internet — Tom McLackland', ch:'It\'s Gold · 28:35'},
-];
 function renderStories(){
   const el=document.getElementById('storyList'); if(!el) return;
-  el.innerHTML = STORIES.map(s=>`
-    <a href="${NEWS_HUB}" target="_blank" rel="noopener" class="tap block glass rounded-2xl px-4 py-3 flex items-center gap-3 text-white">
+  el.innerHTML = DATA.stories.map(s=>`
+    <a href="${DATA.newsHub}" target="_blank" rel="noopener" class="tap block glass rounded-2xl px-4 py-3 flex items-center gap-3 text-white">
       <div class="flex-1 min-w-0">
         <div class="text-[9px] font-extrabold tracking-[.18em] text-sky-brand mb-0.5">${s.tag} · ${s.when}</div>
         <div class="display-tight text-[14px] leading-snug">${s.t}</div>
@@ -740,7 +792,7 @@ function renderStories(){
 }
 function renderShows(){
   const el=document.getElementById('showsGrid'); if(!el) return;
-  el.innerHTML = SHOWS.map(v=>`
+  el.innerHTML = DATA.videos.filter(v=>v.kind==='show').map(v=>`
     <a href="https://www.youtube.com/results?search_query=${encodeURIComponent(v.t+' Racing NSW')}" target="_blank" rel="noopener" class="tap block rounded-2xl overflow-hidden glass">
       <div class="relative aspect-video bg-navy-800">
         <img src="${v.th}" alt="" loading="lazy" class="absolute inset-0 w-full h-full object-cover">
@@ -763,35 +815,21 @@ function newsTab(which){
 }
 
 /* ── Interactive Course Map (Google-Maps stand-in while in development) ── */
-const MAP_CATS = {
-  gate:   {label:'Entry & Gates', emoji:'🚪', color:'#5BB8FF'},
-  food:   {label:'Food & Bars',   emoji:'🍔', color:'#5BB8FF'},
-  amenity:{label:'Amenities',     emoji:'🚻', color:'#5BB8FF'},
-  aid:    {label:'First Aid',     emoji:'⛑️', color:'#E8132E'},
-  bet:    {label:'Betting Rings', emoji:'🎟️', color:'#1E4178'},
-  mingle: {label:'Golden Mingle', emoji:'✨', color:'#F2B33D'},
-};
-const MAP_PINS = [
-  {cat:'gate',   name:'Randwick Gates',        x:54, y:13},
-  {cat:'gate',   name:'Alison Rd Entry',       x:64, y:31},
-  {cat:'food',   name:'Winx Stand Bars',       x:27, y:33},
-  {cat:'mingle', name:'The Golden Mingle',     x:34, y:40},
-  {cat:'bet',    name:'Main Betting Ring',     x:41, y:44},
-  {cat:'food',   name:'Theatre Food Hall',     x:47, y:49},
-  {cat:'amenity',name:'Members Amenities',     x:31, y:44},
-  {cat:'amenity',name:'Concourse Amenities',   x:59, y:52},
-  {cat:'aid',    name:'First Aid Post',        x:49, y:51},
-  {cat:'food',   name:'Infield Bars',          x:55, y:43},
-  {cat:'bet',    name:'Tote & TAB',            x:37, y:38},
-];
-let mapState = {x:0, y:0, scale:1, filters:new Set(Object.keys(MAP_CATS))};
+/* Categories are data now, so filters start empty and are seeded from the
+   service's category list by seedMapFilters() before the map first paints. */
+let mapState = {x:0, y:0, scale:1, filters:new Set()};
+function seedMapFilters(){
+  if(mapState.filters.size===0) mapState.filters=new Set(Object.keys(DATA.mapCats));
+}
 function renderMapFilters(){
-  document.getElementById('mapFilters').innerHTML = Object.entries(MAP_CATS).map(([k,c])=>
+  seedMapFilters();
+  document.getElementById('mapFilters').innerHTML = Object.entries(DATA.mapCats).map(([k,c])=>
     `<button class="mapfilt on ${k==='mingle'?'gold':''}" data-cat="${k}" onclick="toggleMapCat('${k}')">${c.emoji} ${c.label}</button>`).join('');
 }
 function renderMapPins(){
-  document.getElementById('mapPins').innerHTML = MAP_PINS.filter(p=>mapState.filters.has(p.cat)).map(p=>{
-    const c=MAP_CATS[p.cat];
+  seedMapFilters();
+  document.getElementById('mapPins').innerHTML = DATA.mapPins.filter(p=>mapState.filters.has(p.cat)).map(p=>{
+    const c=DATA.mapCats[p.cat];
     return `<button class="mappin" style="left:${p.x}%;top:${p.y}%" onclick="showPin(event,&quot;${p.name}&quot;,&quot;${c.label}&quot;)">
       <span class="dot" style="background:${c.color}"><span>${c.emoji}</span></span></button>`;
   }).join('');
@@ -970,19 +1008,9 @@ function localAnswer(q){
 async function respondTo(q){
   const msgs = [...chatHistory.slice(-6), { role:'user', content:q }];
   try{
-    const res = await fetch('https://api.anthropic.com/v1/messages',{
-      method:'POST',
-      headers:{ 'Content-Type':'application/json' },
-      body: JSON.stringify({
-        model:'claude-sonnet-4-6',
-        max_tokens:200,
-        system:DASH_SYSTEM,
-        messages:msgs
-      })
-    });
-    if(!res.ok) throw new Error('api');
-    const data = await res.json();
-    const text = data?.content?.find(b=>b.type==='text')?.text || data?.content?.[0]?.text;
+    // Goes to our own proxy (see api/dash.js), which holds the model key
+    // server-side. No absolute URL and no key ever lives in www/.
+    const text = await window.DataService.askDash(msgs, DASH_SYSTEM);
     return text || localAnswer(q);
   }catch(e){
     return localAnswer(q);   // graceful offline fallback
@@ -1224,30 +1252,43 @@ function updateAuthUI(){
 /* ╔══════════════════════════════════════════════════════════════╗
    ║ SECTION 9 · BOOT                                             ║
    ╚══════════════════════════════════════════════════════════════╝ */
-/* Boot */
-/* 5.2 — restore persisted fantasy squad (picks + captain), validated */
-try{
-  const raw = JSON.parse(localStorage.getItem('rnsw_fantasy_picks') || 'null');
-  if(raw){
-    const arr = Array.isArray(raw) ? raw : (raw.picks || []);
-    state.picks = arr.filter(id => PLAYERS.some(p => p.id === id));
-    const cap = Array.isArray(raw) ? null : raw.captainId;
-    if(cap && state.picks.includes(cap) && byId(cap).role === 'jockey') state.captainId = cap;
-  }
-}catch(e){}
+/* Boot.
+   Data first, then paint. Chrome that does not depend on data (auth gate,
+   onboarding, phone fit) runs immediately so first paint is never held up
+   by the network; the data-backed renders run once loadAppData() settles.
+   In local mode that resolves on the next microtask, so this is
+   indistinguishable from the previous synchronous boot. */
 
-setSchedSector('all');
-renderResults();
-buildMenu();
-renderActivations();
-renderStories();
-renderShows();
-applyUserName();        // 5.7 — sync username into header/sheet/membership
-renderLiveFeed();       // 3.4 — pre-build Race-Day Mode feeds
-renderTodayFeed();
-renderPastRounds();     // 3.3 — fantasy points history
-render();               // budget, grid, roster, cap alert (reflects restored picks)
-layoutSticky();
+/* 5.2 — restore persisted fantasy squad (picks + captain).
+   Validation needs the roster, so it runs after the load. */
+function restorePicks(){
+  try{
+    const raw = JSON.parse(localStorage.getItem('rnsw_fantasy_picks') || 'null');
+    if(raw){
+      const arr = Array.isArray(raw) ? raw : (raw.picks || []);
+      state.picks = arr.filter(id => DATA.players.some(p => p.id === id));
+      const cap = Array.isArray(raw) ? null : raw.captainId;
+      if(cap && state.picks.includes(cap) && byId(cap).role === 'jockey') state.captainId = cap;
+    }
+  }catch(e){}
+}
+
+/* Everything that reads DATA. Safe to call again after a refresh. */
+function renderAll(){
+  setSchedSector(state.schedSector);
+  renderResults();
+  buildMenu();
+  renderActivations();
+  renderStories();
+  renderShows();
+  renderLiveFeed();       // 3.4 — pre-build Race-Day Mode feeds
+  renderTodayFeed();
+  renderPastRounds();     // 3.3 — fantasy points history
+  render();               // budget, grid, roster, cap alert (reflects restored picks)
+  layoutSticky();
+}
+
+applyUserName();          // 5.7 — sync username into header/sheet/membership
 if(!maybeShowAuthGate()) maybeShowOnboarding();  // login gate on first run, else onboarding
 
 /* 5.1 — initialise from URL hash so #/fantasy etc. deep-links work */
@@ -1258,3 +1299,8 @@ if(!maybeShowAuthGate()) maybeShowOnboarding();  // login gate on first run, els
 })();
 
 fitPhone();
+
+const appReady = loadAppData().then(()=>{
+  restorePicks();
+  renderAll();
+});

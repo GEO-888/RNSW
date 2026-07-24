@@ -31,7 +31,7 @@
    SECTIONS
      1 · Local dataset      4 · Adapters
      2 · Cache              5 · Public API
-     3 · Transport          6 · Back-compat globals (temporary)
+     3 · Transport
    ════════════════════════════════════════════════════════════════ */
 (function (global) {
   'use strict';
@@ -777,6 +777,12 @@
 
     apiUrl: apiUrl,
     clearCache: cacheClear,
+
+    /* Parse a prize string ("$20m", "$1.5m") to a comparable number.
+       Shared with the render layer so the schedule card's headline
+       feature is picked by exactly the rule the service used. */
+    prizeNum: prizeNum,
+
     config: function () {
       return { source: CFG.DATA_SOURCE || 'local', baseUrl: CFG.API_BASE_URL || '' };
     },
@@ -796,41 +802,5 @@
   };
 
   global.DataService = DataService;
-
-  /* ╔══════════════════════════════════════════════════════════════╗
-     ║ SECTION 6 · BACK-COMPAT GLOBALS  ·  TEMPORARY                ║
-     ║ Stage 1 moves the data here without touching app.js, so the  ║
-     ║ refactor can be verified in isolation. Stage 2 rewires every  ║
-     ║ render function onto DataService and DELETES this block.     ║
-     ╚══════════════════════════════════════════════════════════════╝ */
-  global.tierOf = tierOf;
-  global.JOCKEYS = JOCKEYS;
-  global.TRAINERS = TRAINERS;
-  global.PLAYERS = PLAYERS;
-  global.prizeNum = prizeNum;
-  global.makeRaces = makeRaces;
-  global.RACE_DAYS = RACE_DAYS;
-  global.RESULTS = RESULTS;
-  global.VENUE_SECTOR = VENUE_SECTOR;
-  global.HORSES = HORSES;
-  global.JOCKEY_PROFILES = JOCKEY_PROFILES;
-  global.TRAINER_PROFILES = TRAINER_PROFILES;
-  global.LIVE_FEED = LIVE_FEED;
-  global.LEADERBOARD = LEADERBOARD;
-  global.MY_RANK = MY_RANK;
-  global.MY_LEAGUE = MY_LEAGUE;
-  global.PAST_ROUNDS = PAST_ROUNDS;
-  global.SITES = SITES;
-  global.SOCIALS = SOCIALS;
-  global.ACTIVATIONS = ACTIVATIONS;
-  global.PODS = PODCASTS;
-  global.TICKETS = TICKETS;
-  global.ALERT_OPTS = ALERT_OPTS;
-  global.NEWS_HUB = NEWS_HUB;
-  global.STORIES = STORIES;
-  global.SHOW_THUMB = SHOW_THUMB;
-  global.SHOWS = VIDEOS.filter(function (v) { return v.kind === 'show'; });
-  global.MAP_CATS = MAP_CATS;
-  global.MAP_PINS = MAP_PINS;
 
 })(typeof window !== 'undefined' ? window : this);
