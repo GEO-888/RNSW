@@ -8,3 +8,9 @@ android/app/build/
 *.log
 .DS_Store
 smoke.png
+
+# Local env for `vercel dev` — never commit real keys. .env.example is tracked.
+.env
+.env.local
+.env*.local
+.vercel
