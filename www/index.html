@@ -40,10 +40,12 @@
      ============================================================ -->
 
 <script src="https://cdn.tailwindcss.com"></script>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&family=Inter:wght@400;500;600;700;800&display=swap" />
-<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+<!-- Helvetica Neue is vendored locally (see css/app.css @font-face). No font
+     CDN — the app renders fully offline in the native WebView. Preload the two
+     faces used above the fold so first paint isn't a flash of fallback text. -->
+<link rel="preload" as="font" type="font/woff2" href="assets/fonts/hn-regular.woff2" crossorigin>
+<link rel="preload" as="font" type="font/woff2" href="assets/fonts/hn-cond-black.woff2" crossorigin>
 
 <script src="js/tailwind.config.js"></script>
 
@@ -91,9 +93,9 @@
             <button class="tap grid place-items-center w-11 h-11 rounded-full glass glass-pill text-sky-brand" aria-label="Interactive course map" onclick="openCourseMap()">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1"><path d="M9 4 3 6.5v13L9 17l6 2.5 6-2.5v-13L15 6.5 9 4Z"/><path d="M9 4v13M15 6.5v13"/></svg>
             </button>
-            <div class="text-center leading-none select-none">
-              <div class="display text-[18px]">RACING <span class="text-sky-brand">NSW</span></div>
-              <div class="text-[8.5px] font-bold tracking-[.34em] text-sky-soft mt-0.5">OFFICIAL APP</div>
+            <div class="text-center leading-none select-none flex flex-col items-center">
+              <img src="assets/rnsw-logo.png" alt="Racing NSW" class="h-9 w-auto" draggable="false" />
+              <div class="text-[8.5px] font-bold tracking-[.34em] text-sky-soft mt-1">OFFICIAL APP</div>
             </div>
             <!-- ACCOUNT moved here from the bottom nav: full click-through sheet -->
             <button class="tap w-11 h-11 rounded-full grid place-items-center display text-[14px] text-[#06122B]"
@@ -754,9 +756,9 @@
     <div id="authGate" class="gone" aria-label="Sign in to Racing NSW">
       <div class="aurora"></div>
       <div class="auth-inner relative z-10">
-        <div class="text-center mb-7">
-          <div class="display text-[30px] leading-none">RACING <span class="text-sky-brand">NSW</span></div>
-          <div class="text-[9px] font-bold tracking-[.34em] text-sky-soft mt-1">OFFICIAL APP</div>
+        <div class="text-center mb-7 flex flex-col items-center">
+          <img src="assets/rnsw-logo.png" alt="Racing NSW" class="h-14 w-auto" draggable="false" />
+          <div class="text-[9px] font-bold tracking-[.34em] text-sky-soft mt-2">OFFICIAL APP</div>
         </div>
         <h1 id="authHeadline" class="display text-[24px] leading-tight text-center mb-2">Welcome to Racing NSW</h1>
         <p id="authSub" class="text-sky-soft text-[13.5px] leading-relaxed text-center mb-7">Browse live racing, results, schedules and more — no account needed.</p>
@@ -781,7 +783,7 @@
       <div id="obTrack" class="relative z-10">
         <!-- Screen 1 -->
         <div class="ob-screen">
-          <div class="display text-[34px] leading-none mb-1">RACING <span class="text-sky-brand">NSW</span></div>
+          <img src="assets/rnsw-logo.png" alt="Racing NSW" class="h-16 w-auto mb-2" draggable="false" />
           <div class="text-[9px] font-bold tracking-[.34em] text-sky-soft mb-8">OFFICIAL APP</div>
           <h2 class="display text-[26px] leading-tight mb-3">Your racing,<br>your way</h2>
           <p class="text-sky-soft text-[14px] leading-relaxed max-w-[260px]">Live racing, results, fantasy and more — all in one place.</p>
